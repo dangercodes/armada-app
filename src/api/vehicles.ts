@@ -17,11 +17,17 @@ export async function getVehicles(
 ): Promise<MbtaResponse<MbtaVehicleResource[], MbtaIncludedResource>> {
   const queryParams: Record<string, string | number | undefined> = {};
 
-  if (params.limit !== undefined) {
-    queryParams['page[limit]'] = params.limit;
+  const effectiveLimit = params.pageSize ?? params.limit;
+  const effectiveOffset =
+    params.page !== undefined && effectiveLimit !== undefined
+      ? Math.max(0, (params.page - 1) * effectiveLimit)
+      : params.offset;
+
+  if (effectiveLimit !== undefined) {
+    queryParams['page[limit]'] = effectiveLimit;
   }
-  if (params.offset !== undefined) {
-    queryParams['page[offset]'] = params.offset;
+  if (effectiveOffset !== undefined) {
+    queryParams['page[offset]'] = effectiveOffset;
   }
   if (params.routeIds && params.routeIds.length > 0) {
     queryParams['filter[route]'] = params.routeIds.join(',');

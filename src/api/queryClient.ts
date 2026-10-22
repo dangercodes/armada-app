@@ -10,6 +10,8 @@ export const mbtaKeys = {
   vehicles: () => [...mbtaKeys.all, 'vehicles'] as const,
   vehicleList: (params: VehicleQueryParams) =>
     [...mbtaKeys.vehicles(), 'list', params] as const,
+  vehicleLastPage: (params: { pageSize: number; lastOffset: number; routeIds?: string[]; tripIds?: string[] }) =>
+    [...mbtaKeys.vehicles(), 'lastPage', params] as const,
   vehicleDetail: (id: string) =>
     [...mbtaKeys.vehicles(), 'detail', id] as const,
   routes: () => [...mbtaKeys.all, 'routes'] as const,

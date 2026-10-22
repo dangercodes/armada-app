@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useVehicles } from './hooks/useVehicles';
 import {
   AppHeader,
@@ -6,20 +6,23 @@ import {
   EmptyState,
   ErrorState,
   FilterToolbarPlaceholder,
-  PaginationPlaceholder,
+  Pagination,
   VehicleGrid,
 } from './components';
 import { createIncludedLookup } from './utils/lookup';
-import { parseOffsetFromUrl } from './utils/pagination';
 import type { MbtaVehicleResource } from './types/mbta';
 
 export default function App() {
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(12);
   const [selectedVehicleNotice, setSelectedVehicleNotice] = useState<string | null>(null);
 
-  // Fetch live vehicle data (12 items for balanced 1/2/3/4-col responsive grid)
+  const vehicleSectionRef = useRef<HTMLDivElement>(null);
+
+  // Fetch paginated vehicles with server-side page[limit] and page[offset]
   const vehiclesQuery = useVehicles({
-    limit: 12,
-    offset: 0,
+    page: currentPage,
+    pageSize,
     include: ['route', 'trip', 'stop'],
   });
 
@@ -28,12 +31,33 @@ export default function App() {
     return createIncludedLookup(vehiclesQuery.data?.included);
   }, [vehiclesQuery.data?.included]);
 
-  // Estimate total fleet size from the JSON:API 'last' link offset
-  const totalFleetEstimate = useMemo(() => {
-    const lastOffset = parseOffsetFromUrl(vehiclesQuery.data?.links?.last);
-    if (lastOffset === null) return null;
-    return lastOffset + (vehiclesQuery.data?.data?.length ?? 12);
-  }, [vehiclesQuery.data?.links?.last, vehiclesQuery.data?.data?.length]);
+  // Reset to page 1 whenever page size changes
+  const handlePageSizeChange = (newPageSize: number) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1);
+  };
+
+  // Safe page change with boundary checks
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1) return;
+    if (vehiclesQuery.totalPages !== null && newPage > vehiclesQuery.totalPages) return;
+    setCurrentPage(newPage);
+
+    // Smooth scroll back to vehicle section for optimal user navigation
+    if (vehicleSectionRef.current) {
+      const topOffset = vehicleSectionRef.current.getBoundingClientRect().top + window.scrollY - 80;
+      window.scrollTo({ top: Math.max(0, topOffset), behavior: 'smooth' });
+    }
+  };
+
+  // Prevent navigation to invalid pages when total count changes
+  if (
+    vehiclesQuery.totalPages !== null &&
+    vehiclesQuery.totalPages > 0 &&
+    currentPage > vehiclesQuery.totalPages
+  ) {
+    setCurrentPage(vehiclesQuery.totalPages);
+  }
 
   const lastUpdatedDate = vehiclesQuery.dataUpdatedAt
     ? new Date(vehiclesQuery.dataUpdatedAt)
@@ -70,7 +94,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => setSelectedVehicleNotice(null)}
-              className="text-slate-400 hover:text-slate-600 font-bold px-2 py-1 rounded"
+              className="text-slate-400 hover:text-slate-600 font-bold px-2 py-1 rounded cursor-pointer"
               aria-label="Tutup notifikasi"
             >
               &times;
@@ -81,47 +105,85 @@ export default function App() {
         {/* 2 & 3. Hero Introduction & Live Metrics Summary */}
         <DashboardSummary
           vehicles={vehiclesQuery.data?.data ?? []}
-          totalFleetEstimate={totalFleetEstimate}
+          totalFleetEstimate={vehiclesQuery.totalRecords}
           isLoading={vehiclesQuery.isLoading}
         />
 
         {/* 4. Filter Toolbar Placeholder (Phase 4) */}
         <FilterToolbarPlaceholder />
 
-        {/* 5. Responsive Vehicle Card Grid with Loading / Error / Empty states */}
-        {vehiclesQuery.isLoading ? (
-          <VehicleGrid
-            vehicles={[]}
-            isLoading={true}
-            skeletonCount={8}
-          />
-        ) : vehiclesQuery.isError ? (
-          <ErrorState
-            error={vehiclesQuery.error}
-            onRetry={() => vehiclesQuery.refetch()}
-          />
-        ) : !vehiclesQuery.data?.data || vehiclesQuery.data.data.length === 0 ? (
-          <EmptyState onRefresh={() => vehiclesQuery.refetch()} />
-        ) : (
-          <VehicleGrid
-            vehicles={vehiclesQuery.data.data}
-            routes={routes}
-            trips={trips}
-            onVehicleClick={handleVehicleClick}
-          />
-        )}
+        {/* Anchor reference for smooth pagination scrolling */}
+        <div ref={vehicleSectionRef} className="scroll-mt-20">
+          {/* Subtle Fetching Indicator during page transitions when previous data is kept */}
+          {vehiclesQuery.isFetching && !vehiclesQuery.isLoading && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="mb-3 bg-blue-50/90 border border-blue-200/90 rounded-xl px-4 py-2 flex items-center justify-between text-xs text-[#0B3C8C] shadow-2xs motion-safe:animate-fadeIn"
+            >
+              <div className="flex items-center gap-2.5 font-medium">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1E6BD6] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#1E6BD6]" />
+                </span>
+                <span>Memperbarui data armada halaman {currentPage}...</span>
+              </div>
+              <span className="text-[11px] font-mono text-slate-500 bg-white/70 px-2 py-0.5 rounded border border-slate-200">
+                page[limit]={pageSize}&amp;page[offset]={vehiclesQuery.offset}
+              </span>
+            </div>
+          )}
 
-        {/* 6. Pagination Placeholder (Phase 3) */}
-        <PaginationPlaceholder
+          {/* 5. Responsive Vehicle Card Grid with Loading / Error / Empty states */}
+          {vehiclesQuery.isLoading ? (
+            <VehicleGrid
+              vehicles={[]}
+              isLoading={true}
+              skeletonCount={pageSize}
+            />
+          ) : vehiclesQuery.isError ? (
+            <ErrorState
+              error={vehiclesQuery.error}
+              onRetry={() => vehiclesQuery.refetch()}
+            />
+          ) : !vehiclesQuery.data?.data || vehiclesQuery.data.data.length === 0 ? (
+            <EmptyState onRefresh={() => vehiclesQuery.refetch()} />
+          ) : (
+            <div
+              className={`transition-opacity duration-200 ${
+                vehiclesQuery.isPlaceholderData ? 'opacity-70 pointer-events-none' : 'opacity-100'
+              }`}
+            >
+              <VehicleGrid
+                vehicles={vehiclesQuery.data.data}
+                routes={routes}
+                trips={trips}
+                onVehicleClick={handleVehicleClick}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* 6. Fully Functional Server-Side Pagination Component (Phase 3) */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={vehiclesQuery.totalPages}
+          pageSize={pageSize}
+          totalRecords={vehiclesQuery.totalRecords}
           currentCount={vehiclesQuery.data?.data?.length ?? 0}
-          totalEstimate={totalFleetEstimate}
+          pageSizeOptions={[8, 12, 24, 48]}
+          isFetching={vehiclesQuery.isFetching}
+          isTotalLoading={vehiclesQuery.isTotalLoading}
+          hasNextPage={vehiclesQuery.hasNextPage}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
         />
       </main>
 
       {/* Footer */}
       <footer className="border-t border-slate-200/80 bg-white py-4 mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-          <span>Transjakarta - Sistem Manajemen Armada &bull; Phase 2</span>
+          <span>Transjakarta - Sistem Manajemen Armada &bull; Phase 3</span>
           <span>Sistem Monitoring Operasional &bull; React 19 &bull; Vite &bull; Tailwind CSS v4</span>
         </div>
       </footer>

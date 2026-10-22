@@ -234,6 +234,8 @@ export interface MbtaPaginationParams {
 export interface VehicleQueryParams {
   limit?: number;
   offset?: number;
+  page?: number;
+  pageSize?: number;
   routeIds?: string[];
   tripIds?: string[];
   include?: string[];

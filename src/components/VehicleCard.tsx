@@ -39,6 +39,13 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
     relationships.route?.data?.id ||
     'Rute Belum Ditugaskan';
 
+  // Limit length of route badge to prevent overflowing the card and status badge
+  const MAX_ROUTE_BADGE_LENGTH = 11;
+  const isRouteTruncated = routeIdentifier.length > MAX_ROUTE_BADGE_LENGTH;
+  const displayRouteIdentifier = isRouteTruncated
+    ? `${routeIdentifier.slice(0, 10)}…`
+    : routeIdentifier;
+
   const tripHeadsign =
     trip?.attributes.headsign ||
     (trip ? `Perjalanan #${trip.id}` : relationships.trip?.data?.id ? `Perjalanan #${relationships.trip.data.id}` : null);
@@ -87,11 +94,11 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
       aria-label={`Armada ${label}, Rute ${routeIdentifier}, Status ${attributes.current_status}`}
       onClick={() => onClick?.(vehicle)}
       onKeyDown={handleKeyDown}
-      className="group relative bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md hover:border-slate-300/80 transition-all duration-200 flex flex-col justify-between overflow-hidden cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E6BD6] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]"
+      className="group relative bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md hover:border-slate-300/80 hover:z-20 transition-all duration-200 flex flex-col justify-between cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E6BD6] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]"
     >
       {/* Route Color Accent Strip */}
       <div
-        className="absolute top-0 left-0 bottom-0 w-1.5 transition-colors"
+        className="absolute top-0 left-0 bottom-0 w-1.5 rounded-l-2xl transition-colors"
         style={{ backgroundColor: routeColor }}
         aria-hidden="true"
       />
@@ -100,18 +107,35 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
       <div className="p-5 pl-6 flex-1 flex flex-col justify-between gap-4">
         {/* Top Header: Route Chip & Status Badge */}
         <div>
-          <div className="flex items-center justify-between gap-2 mb-2">
-            {/* Route Badge */}
-            <span
-              className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold tracking-wide truncate max-w-[170px] shadow-2xs shrink-0"
-              style={{
-                backgroundColor: routeColor,
-                color: routeTextColor,
-              }}
-              title={`Rute: ${routeIdentifier}`}
-            >
-              {routeIdentifier}
-            </span>
+          <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
+            {/* Route Badge with Hover Tooltip */}
+            <div className="relative group/route min-w-0 flex-shrink">
+              <span
+                className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold tracking-wide truncate max-w-[110px] sm:max-w-[125px] shadow-2xs cursor-help select-none"
+                style={{
+                  backgroundColor: routeColor,
+                  color: routeTextColor,
+                }}
+                title={`Rute: ${routeIdentifier}`}
+              >
+                {displayRouteIdentifier}
+              </span>
+
+              {/* Floating Tooltip (Appears when route badge is hovered) */}
+              <div
+                role="tooltip"
+                className="pointer-events-none absolute left-0 top-full mt-1.5 z-40 hidden group-hover/route:flex flex-col items-start bg-slate-900/95 text-white text-[11px] leading-tight py-1.5 px-2.5 rounded-lg shadow-xl border border-slate-700/80 backdrop-blur-xs whitespace-nowrap motion-safe:animate-fadeIn"
+              >
+                {/* Arrow pointing up */}
+                <div className="absolute left-3 bottom-full w-0 h-0 border-x-4 border-x-transparent border-b-4 border-b-slate-900/95" />
+                <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
+                  Rute Lengkap
+                </span>
+                <span className="font-semibold text-white mt-0.5">
+                  {routeIdentifier}
+                </span>
+              </div>
+            </div>
 
             {/* Status Badge */}
             <StatusBadge status={attributes.current_status} size="sm" className="shrink-0" />

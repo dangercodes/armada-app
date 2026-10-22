@@ -22,5 +22,7 @@ export { ErrorState } from './ErrorState';
 export type { ErrorStateProps } from './ErrorState';
 
 export { FilterToolbarPlaceholder } from './FilterToolbarPlaceholder';
+export { Pagination } from './Pagination';
+export type { PaginationProps } from './Pagination';
 export { PaginationPlaceholder } from './PaginationPlaceholder';
 export type { PaginationPlaceholderProps } from './PaginationPlaceholder';
