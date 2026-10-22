@@ -150,9 +150,8 @@ export default function App() {
             <EmptyState onRefresh={() => vehiclesQuery.refetch()} />
           ) : (
             <div
-              className={`transition-opacity duration-200 ${
-                vehiclesQuery.isPlaceholderData ? 'opacity-70 pointer-events-none' : 'opacity-100'
-              }`}
+              className={`transition-opacity duration-200 ${vehiclesQuery.isPlaceholderData ? 'opacity-70 pointer-events-none' : 'opacity-100'
+                }`}
             >
               <VehicleGrid
                 vehicles={vehiclesQuery.data.data}
@@ -183,7 +182,7 @@ export default function App() {
       {/* Footer */}
       <footer className="border-t border-slate-200/80 bg-white py-4 mt-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
-          <span>Transjakarta - Sistem Manajemen Armada &bull; Phase 3</span>
+          <span>Transjakarta - Sistem Manajemen Armada</span>
           <span>Sistem Monitoring Operasional &bull; React 19 &bull; Vite &bull; Tailwind CSS v4</span>
         </div>
       </footer>
