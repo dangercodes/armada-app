@@ -1,122 +1,130 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useMemo, useState } from 'react';
+import { useVehicles } from './hooks/useVehicles';
+import {
+  AppHeader,
+  DashboardSummary,
+  EmptyState,
+  ErrorState,
+  FilterToolbarPlaceholder,
+  PaginationPlaceholder,
+  VehicleGrid,
+} from './components';
+import { createIncludedLookup } from './utils/lookup';
+import { parseOffsetFromUrl } from './utils/pagination';
+import type { MbtaVehicleResource } from './types/mbta';
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [selectedVehicleNotice, setSelectedVehicleNotice] = useState<string | null>(null);
+
+  // Fetch live vehicle data (12 items for balanced 1/2/3/4-col responsive grid)
+  const vehiclesQuery = useVehicles({
+    limit: 12,
+    offset: 0,
+    include: ['route', 'trip', 'stop'],
+  });
+
+  // Index included resources (routes, trips, stops) for O(1) card lookups
+  const { routes, trips } = useMemo(() => {
+    return createIncludedLookup(vehiclesQuery.data?.included);
+  }, [vehiclesQuery.data?.included]);
+
+  // Estimate total fleet size from the JSON:API 'last' link offset
+  const totalFleetEstimate = useMemo(() => {
+    const lastOffset = parseOffsetFromUrl(vehiclesQuery.data?.links?.last);
+    if (lastOffset === null) return null;
+    return lastOffset + (vehiclesQuery.data?.data?.length ?? 12);
+  }, [vehiclesQuery.data?.links?.last, vehiclesQuery.data?.data?.length]);
+
+  const lastUpdatedDate = vehiclesQuery.dataUpdatedAt
+    ? new Date(vehiclesQuery.dataUpdatedAt)
+    : null;
+
+  const handleVehicleClick = (vehicle: MbtaVehicleResource) => {
+    const label = vehicle.attributes.label?.trim() || `ID: ${vehicle.id}`;
+    setSelectedVehicleNotice(
+      `Kendaraan "${label}" dipilih. Modal detail armada lengkap dengan peta Leaflet interaktif akan aktif di Phase 5.`,
+    );
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="min-h-screen bg-[#F5F8FC] text-slate-800 flex flex-col font-sans antialiased selection:bg-[#1E6BD6]/20">
+      {/* 1. Compact Application Header */}
+      <AppHeader
+        lastUpdated={lastUpdatedDate}
+        isFetching={vehiclesQuery.isFetching}
+        onRefresh={() => vehiclesQuery.refetch()}
+      />
 
-      <div className="ticks"></div>
+      {/* Main Dashboard Container */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+        {/* Interactive Notice Toast when a vehicle card is clicked */}
+        {selectedVehicleNotice && (
+          <div
+            role="status"
+            className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-center justify-between gap-3 text-xs text-[#0B3C8C] shadow-xs motion-safe:animate-fadeIn"
+          >
+            <div className="flex items-center gap-2.5">
+              <span className="w-2 h-2 rounded-full bg-[#1E6BD6] shrink-0" />
+              <p className="font-medium">{selectedVehicleNotice}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedVehicleNotice(null)}
+              className="text-slate-400 hover:text-slate-600 font-bold px-2 py-1 rounded"
+              aria-label="Tutup notifikasi"
+            >
+              &times;
+            </button>
+          </div>
+        )}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        {/* 2 & 3. Hero Introduction & Live Metrics Summary */}
+        <DashboardSummary
+          vehicles={vehiclesQuery.data?.data ?? []}
+          totalFleetEstimate={totalFleetEstimate}
+          isLoading={vehiclesQuery.isLoading}
+        />
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        {/* 4. Filter Toolbar Placeholder (Phase 4) */}
+        <FilterToolbarPlaceholder />
+
+        {/* 5. Responsive Vehicle Card Grid with Loading / Error / Empty states */}
+        {vehiclesQuery.isLoading ? (
+          <VehicleGrid
+            vehicles={[]}
+            isLoading={true}
+            skeletonCount={8}
+          />
+        ) : vehiclesQuery.isError ? (
+          <ErrorState
+            error={vehiclesQuery.error}
+            onRetry={() => vehiclesQuery.refetch()}
+          />
+        ) : !vehiclesQuery.data?.data || vehiclesQuery.data.data.length === 0 ? (
+          <EmptyState onRefresh={() => vehiclesQuery.refetch()} />
+        ) : (
+          <VehicleGrid
+            vehicles={vehiclesQuery.data.data}
+            routes={routes}
+            trips={trips}
+            onVehicleClick={handleVehicleClick}
+          />
+        )}
+
+        {/* 6. Pagination Placeholder (Phase 3) */}
+        <PaginationPlaceholder
+          currentCount={vehiclesQuery.data?.data?.length ?? 0}
+          totalEstimate={totalFleetEstimate}
+        />
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-slate-200/80 bg-white py-4 mt-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+          <span>Transjakarta - Sistem Manajemen Armada &bull; Phase 2</span>
+          <span>Sistem Monitoring Operasional &bull; React 19 &bull; Vite &bull; Tailwind CSS v4</span>
+        </div>
+      </footer>
+    </div>
+  );
 }
-
-export default App
