@@ -1,11 +1,12 @@
 import { useMemo, useRef, useState } from 'react';
 import { useVehicles } from './hooks/useVehicles';
+import { useUrlFilters } from './hooks/useUrlFilters';
 import {
   AppHeader,
   DashboardSummary,
   EmptyState,
   ErrorState,
-  FilterToolbarPlaceholder,
+  FilterToolbar,
   Pagination,
   VehicleGrid,
 } from './components';
@@ -13,16 +14,28 @@ import { createIncludedLookup } from './utils/lookup';
 import type { MbtaVehicleResource } from './types/mbta';
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [pageSize, setPageSize] = useState<number>(12);
-  const [selectedVehicleNotice, setSelectedVehicleNotice] = useState<string | null>(null);
+  // Synchronized state with URL query parameters (?routes=...&trips=...&page=...&pageSize=...)
+  const {
+    routeIds,
+    tripIds,
+    page,
+    pageSize,
+    setRouteIds,
+    setTripIds,
+    setPage,
+    setPageSize,
+    resetFilters,
+  } = useUrlFilters();
 
+  const [selectedVehicleNotice, setSelectedVehicleNotice] = useState<string | null>(null);
   const vehicleSectionRef = useRef<HTMLDivElement>(null);
 
-  // Fetch paginated vehicles with server-side page[limit] and page[offset]
+  // Fetch paginated vehicles with server-side page[limit], page[offset], and route/trip filters
   const vehiclesQuery = useVehicles({
-    page: currentPage,
+    page,
     pageSize,
+    routeIds: routeIds.length > 0 ? routeIds : undefined,
+    tripIds: tripIds.length > 0 ? tripIds : undefined,
     include: ['route', 'trip', 'stop'],
   });
 
@@ -31,17 +44,16 @@ export default function App() {
     return createIncludedLookup(vehiclesQuery.data?.included);
   }, [vehiclesQuery.data?.included]);
 
-  // Reset to page 1 whenever page size changes
+  // Handle page size change with automatic reset to page 1
   const handlePageSizeChange = (newPageSize: number) => {
     setPageSize(newPageSize);
-    setCurrentPage(1);
   };
 
   // Safe page change with boundary checks
   const handlePageChange = (newPage: number) => {
     if (newPage < 1) return;
     if (vehiclesQuery.totalPages !== null && newPage > vehiclesQuery.totalPages) return;
-    setCurrentPage(newPage);
+    setPage(newPage);
 
     // Smooth scroll back to vehicle section for optimal user navigation
     if (vehicleSectionRef.current) {
@@ -54,9 +66,9 @@ export default function App() {
   if (
     vehiclesQuery.totalPages !== null &&
     vehiclesQuery.totalPages > 0 &&
-    currentPage > vehiclesQuery.totalPages
+    page > vehiclesQuery.totalPages
   ) {
-    setCurrentPage(vehiclesQuery.totalPages);
+    setPage(vehiclesQuery.totalPages);
   }
 
   const lastUpdatedDate = vehiclesQuery.dataUpdatedAt
@@ -69,6 +81,8 @@ export default function App() {
       `Kendaraan "${label}" dipilih. Modal detail armada lengkap dengan peta Leaflet interaktif akan aktif di Phase 5.`,
     );
   };
+
+  const hasActiveFilters = routeIds.length > 0 || tripIds.length > 0;
 
   return (
     <div className="min-h-screen bg-[#F5F8FC] text-slate-800 flex flex-col font-sans antialiased selection:bg-[#1E6BD6]/20">
@@ -109,8 +123,15 @@ export default function App() {
           isLoading={vehiclesQuery.isLoading}
         />
 
-        {/* 4. Filter Toolbar Placeholder (Phase 4) */}
-        <FilterToolbarPlaceholder />
+        {/* 4. Multi-Select Route & Trip Filters (Phase 4) */}
+        <FilterToolbar
+          selectedRouteIds={routeIds}
+          onRouteIdsChange={setRouteIds}
+          selectedTripIds={tripIds}
+          onTripIdsChange={setTripIds}
+          onResetFilters={resetFilters}
+          isFetchingVehicles={vehiclesQuery.isFetching}
+        />
 
         {/* Anchor reference for smooth pagination scrolling */}
         <div ref={vehicleSectionRef} className="scroll-mt-20">
@@ -126,7 +147,7 @@ export default function App() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#1E6BD6] opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-[#1E6BD6]" />
                 </span>
-                <span>Memperbarui data armada halaman {currentPage}...</span>
+                <span>Memperbarui data armada halaman {page}...</span>
               </div>
               <span className="text-[11px] font-mono text-slate-500 bg-white/70 px-2 py-0.5 rounded border border-slate-200">
                 page[limit]={pageSize}&amp;page[offset]={vehiclesQuery.offset}
@@ -147,11 +168,24 @@ export default function App() {
               onRetry={() => vehiclesQuery.refetch()}
             />
           ) : !vehiclesQuery.data?.data || vehiclesQuery.data.data.length === 0 ? (
-            <EmptyState onRefresh={() => vehiclesQuery.refetch()} />
+            hasActiveFilters ? (
+              <EmptyState
+                title="Tidak Ada Armada Sesuai Filter"
+                description={
+                  tripIds.length > 0
+                    ? "Tidak ada kendaraan fisik yang sedang aktif beroperasi di jalan raya untuk jadwal perjalanan (trip) yang dipilih. Pada MBTA, daftar trip mencakup seluruh jadwal 24 jam, sedangkan armada hanya muncul saat kendaraan sedang berjalan. Silakan pilih opsi berlabel '● Sedang Berjalan' di dropdown untuk melihat kendaraan aktif."
+                    : "Tidak ditemukan armada aktif yang cocok dengan kombinasi filter rute atau perjalanan yang dipilih. Silakan ubah filter atau atur ulang."
+                }
+                onRefresh={resetFilters}
+              />
+            ) : (
+              <EmptyState onRefresh={() => vehiclesQuery.refetch()} />
+            )
           ) : (
             <div
-              className={`transition-opacity duration-200 ${vehiclesQuery.isPlaceholderData ? 'opacity-70 pointer-events-none' : 'opacity-100'
-                }`}
+              className={`transition-opacity duration-200 ${
+                vehiclesQuery.isPlaceholderData ? 'opacity-70 pointer-events-none' : 'opacity-100'
+              }`}
             >
               <VehicleGrid
                 vehicles={vehiclesQuery.data.data}
@@ -165,7 +199,7 @@ export default function App() {
 
         {/* 6. Fully Functional Server-Side Pagination Component (Phase 3) */}
         <Pagination
-          currentPage={currentPage}
+          currentPage={page}
           totalPages={vehiclesQuery.totalPages}
           pageSize={pageSize}
           totalRecords={vehiclesQuery.totalRecords}

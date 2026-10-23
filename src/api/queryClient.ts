@@ -17,11 +17,15 @@ export const mbtaKeys = {
   routes: () => [...mbtaKeys.all, 'routes'] as const,
   routeList: (params: RouteQueryParams) =>
     [...mbtaKeys.routes(), 'list', params] as const,
+  routeInfinite: (params: { pageSize?: number } = {}) =>
+    [...mbtaKeys.routes(), 'infinite', params] as const,
   routeDetail: (id: string) =>
     [...mbtaKeys.routes(), 'detail', id] as const,
   trips: () => [...mbtaKeys.all, 'trips'] as const,
   tripList: (params: TripQueryParams) =>
     [...mbtaKeys.trips(), 'list', params] as const,
+  tripInfinite: (params: { routeIds?: string[]; pageSize?: number } = {}) =>
+    [...mbtaKeys.trips(), 'infinite', params] as const,
   tripDetail: (id: string) =>
     [...mbtaKeys.trips(), 'detail', id] as const,
 };

@@ -21,6 +21,14 @@ export type { EmptyStateProps } from './EmptyState';
 export { ErrorState } from './ErrorState';
 export type { ErrorStateProps } from './ErrorState';
 
+export { FilterToolbar } from './FilterToolbar';
+export type { FilterToolbarProps } from './FilterToolbar';
+export { RouteSelect } from './RouteSelect';
+export type { RouteSelectProps, RouteOption } from './RouteSelect';
+export { TripSelect } from './TripSelect';
+export type { TripSelectProps, TripOption } from './TripSelect';
+export { ActiveFilterChips } from './ActiveFilterChips';
+export type { ActiveFilterChipsProps } from './ActiveFilterChips';
 export { FilterToolbarPlaceholder } from './FilterToolbarPlaceholder';
 export { Pagination } from './Pagination';
 export type { PaginationProps } from './Pagination';
