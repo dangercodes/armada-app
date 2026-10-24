@@ -137,3 +137,72 @@ export function humanizeOccupancy(occupancy?: string | null): string | null {
       return occupancy.replace(/_/g, ' ').toLowerCase();
   }
 }
+
+/**
+ * Converts a degree bearing (0-360) into standard Indonesian compass cardinal directions.
+ */
+export function getCompassDirection(bearing: number): string {
+  const directions = [
+    'Utara (U)',
+    'Timur Laut (TL)',
+    'Timur (T)',
+    'Tenggara (TG)',
+    'Selatan (S)',
+    'Barat Daya (BD)',
+    'Barat (B)',
+    'Barat Laut (BL)',
+  ];
+  const normalized = ((bearing % 360) + 360) % 360;
+  const index = Math.round(normalized / 45) % 8;
+  return directions[index];
+}
+
+/**
+ * Formats vehicle heading/bearing with degree and cardinal direction.
+ */
+export function formatBearing(bearing: number | null | undefined): string {
+  if (bearing === null || bearing === undefined || Number.isNaN(bearing)) {
+    return 'Tidak tersedia';
+  }
+  return `${bearing}° ${getCompassDirection(bearing)}`;
+}
+
+/**
+ * Formats vehicle speed from m/s into km/h and m/s.
+ */
+export function formatSpeed(speed: number | null | undefined): string {
+  if (speed === null || speed === undefined || Number.isNaN(speed)) {
+    return 'Tidak tersedia';
+  }
+  const kmh = (speed * 3.6).toFixed(1);
+  return `${kmh} km/jam (${speed.toFixed(1)} m/s)`;
+}
+
+/**
+ * Formats GTFS direction_id (0 = Outbound, 1 = Inbound).
+ */
+export function formatDirection(directionId: 0 | 1 | null | undefined): string {
+  if (directionId === 0) return 'Arah 0 (Outbound)';
+  if (directionId === 1) return 'Arah 1 (Inbound)';
+  return 'Tidak tersedia';
+}
+
+/**
+ * Formats current stop sequence.
+ */
+export function formatStopSequence(sequence: number | null | undefined): string {
+  if (sequence === null || sequence === undefined || Number.isNaN(sequence)) {
+    return 'Tidak tersedia';
+  }
+  return `Perhentian ke-${sequence}`;
+}
+
+/**
+ * Formats revenue status.
+ */
+export function formatRevenue(revenue: string | null | undefined): string {
+  if (!revenue) return 'Tidak tersedia';
+  if (revenue.toUpperCase() === 'REVENUE') return 'Operasional Komersial (Revenue)';
+  if (revenue.toUpperCase() === 'NON_REVENUE') return 'Non-Komersial (Non-Revenue)';
+  return revenue;
+}

@@ -464,9 +464,6 @@ export const TripSelect: React.FC<TripSelectProps> = ({
           className="text-xs font-semibold text-slate-700 flex items-center gap-1.5"
         >
           <span>Filter Perjalanan (Trip)</span>
-          <span className="text-[10px] text-slate-400 font-normal">
-            (Pilih Ganda &bull; Gulir Otomatis)
-          </span>
         </label>
         <div className="flex items-center gap-1.5">
           {hasRouteSelected && activeTripCount > 0 && (

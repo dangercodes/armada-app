@@ -81,7 +81,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+    if ((e.key === 'Enter' || e.key === ' ') && !e.repeat) {
       e.preventDefault();
       onClick?.(vehicle);
     }

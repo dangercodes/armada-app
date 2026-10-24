@@ -4,6 +4,9 @@ export type { AppHeaderProps } from './AppHeader';
 export { DashboardSummary } from './DashboardSummary';
 export type { DashboardSummaryProps } from './DashboardSummary';
 
+export { AnimatedCounter } from './AnimatedCounter';
+export type { AnimatedCounterProps } from './AnimatedCounter';
+
 export { StatusBadge } from './StatusBadge';
 export type { StatusBadgeProps } from './StatusBadge';
 
@@ -29,8 +32,11 @@ export { TripSelect } from './TripSelect';
 export type { TripSelectProps, TripOption } from './TripSelect';
 export { ActiveFilterChips } from './ActiveFilterChips';
 export type { ActiveFilterChipsProps } from './ActiveFilterChips';
-export { FilterToolbarPlaceholder } from './FilterToolbarPlaceholder';
 export { Pagination } from './Pagination';
 export type { PaginationProps } from './Pagination';
-export { PaginationPlaceholder } from './PaginationPlaceholder';
-export type { PaginationPlaceholderProps } from './PaginationPlaceholder';
+
+export { VehicleModal } from './VehicleModal';
+export type { VehicleModalProps } from './VehicleModal';
+export { VehicleModalSkeleton } from './VehicleModalSkeleton';
+export { VehicleMap } from './VehicleMap';
+export type { VehicleMapProps } from './VehicleMap';

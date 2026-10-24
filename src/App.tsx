@@ -9,6 +9,7 @@ import {
   FilterToolbar,
   Pagination,
   VehicleGrid,
+  VehicleModal,
 } from './components';
 import { createIncludedLookup } from './utils/lookup';
 import type { MbtaVehicleResource } from './types/mbta';
@@ -27,7 +28,9 @@ export default function App() {
     resetFilters,
   } = useUrlFilters();
 
-  const [selectedVehicleNotice, setSelectedVehicleNotice] = useState<string | null>(null);
+  const [selectedVehicle, setSelectedVehicle] = useState<MbtaVehicleResource | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const lastClosedTimeRef = useRef<number>(0);
   const vehicleSectionRef = useRef<HTMLDivElement>(null);
 
   // Fetch paginated vehicles with server-side page[limit], page[offset], and route/trip filters
@@ -40,7 +43,7 @@ export default function App() {
   });
 
   // Index included resources (routes, trips, stops) for O(1) card lookups
-  const { routes, trips } = useMemo(() => {
+  const { routes, trips, stops } = useMemo(() => {
     return createIncludedLookup(vehiclesQuery.data?.included);
   }, [vehiclesQuery.data?.included]);
 
@@ -75,12 +78,32 @@ export default function App() {
     ? new Date(vehiclesQuery.dataUpdatedAt)
     : null;
 
-  const handleVehicleClick = (vehicle: MbtaVehicleResource) => {
-    const label = vehicle.attributes.label?.trim() || `ID: ${vehicle.id}`;
-    setSelectedVehicleNotice(
-      `Kendaraan "${label}" dipilih. Modal detail armada lengkap dengan peta Leaflet interaktif akan aktif di Phase 5.`,
-    );
+  const handleCloseModal = () => {
+    lastClosedTimeRef.current = Date.now();
+    setIsModalOpen(false);
+    setSelectedVehicle(null);
   };
+
+  const handleVehicleClick = (vehicle: MbtaVehicleResource) => {
+    // Prevent phantom click-through (ghost click) on underlying cards immediately after closing modal
+    if (Date.now() - lastClosedTimeRef.current < 400) {
+      return;
+    }
+    setSelectedVehicle(vehicle);
+    setIsModalOpen(true);
+  };
+
+  const selectedRoute = selectedVehicle?.relationships.route?.data?.id
+    ? routes.get(selectedVehicle.relationships.route.data.id)
+    : undefined;
+
+  const selectedTrip = selectedVehicle?.relationships.trip?.data?.id
+    ? trips.get(selectedVehicle.relationships.trip.data.id)
+    : undefined;
+
+  const selectedStop = selectedVehicle?.relationships.stop?.data?.id
+    ? stops.get(selectedVehicle.relationships.stop.data.id)
+    : undefined;
 
   const hasActiveFilters = routeIds.length > 0 || tripIds.length > 0;
 
@@ -95,32 +118,13 @@ export default function App() {
 
       {/* Main Dashboard Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
-        {/* Interactive Notice Toast when a vehicle card is clicked */}
-        {selectedVehicleNotice && (
-          <div
-            role="status"
-            className="bg-blue-50 border border-blue-200 rounded-2xl p-4 flex items-center justify-between gap-3 text-xs text-[#0B3C8C] shadow-xs motion-safe:animate-fadeIn"
-          >
-            <div className="flex items-center gap-2.5">
-              <span className="w-2 h-2 rounded-full bg-[#1E6BD6] shrink-0" />
-              <p className="font-medium">{selectedVehicleNotice}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSelectedVehicleNotice(null)}
-              className="text-slate-400 hover:text-slate-600 font-bold px-2 py-1 rounded cursor-pointer"
-              aria-label="Tutup notifikasi"
-            >
-              &times;
-            </button>
-          </div>
-        )}
 
         {/* 2 & 3. Hero Introduction & Live Metrics Summary */}
         <DashboardSummary
           vehicles={vehiclesQuery.data?.data ?? []}
           totalFleetEstimate={vehiclesQuery.totalRecords}
           isLoading={vehiclesQuery.isLoading}
+          isTotalLoading={vehiclesQuery.isTotalLoading}
         />
 
         {/* 4. Multi-Select Route & Trip Filters (Phase 4) */}
@@ -220,6 +224,16 @@ export default function App() {
           <span>Sistem Monitoring Operasional &bull; React 19 &bull; Vite &bull; Tailwind CSS v4</span>
         </div>
       </footer>
+
+      {/* 7. Accessible Vehicle Detail Modal with Interactive Leaflet Map (Phase 5) */}
+      <VehicleModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        vehicle={selectedVehicle}
+        initialRoute={selectedRoute}
+        initialTrip={selectedTrip}
+        initialStop={selectedStop}
+      />
     </div>
   );
 }

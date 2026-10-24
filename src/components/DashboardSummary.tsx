@@ -1,17 +1,20 @@
 import React from 'react';
 import type { MbtaVehicleResource } from '../types/mbta';
 import bannerTj from '../assets/banner-tj.jpg';
+import { AnimatedCounter } from './AnimatedCounter';
 
 export interface DashboardSummaryProps {
   vehicles: MbtaVehicleResource[];
   totalFleetEstimate?: number | null;
   isLoading?: boolean;
+  isTotalLoading?: boolean;
 }
 
 export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
   vehicles,
   totalFleetEstimate,
   isLoading = false,
+  isTotalLoading = false,
 }) => {
   const loadedCount = vehicles.length;
 
@@ -33,6 +36,8 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
   const uniqueRoutesCount = new Set(
     vehicles.map((v) => v.relationships.route?.data?.id).filter(Boolean),
   ).size;
+
+  const isTotalBusy = isLoading || (isTotalLoading && totalFleetEstimate === null);
 
   return (
     <section aria-label="Ringkasan metrik dashboard" className="space-y-4">
@@ -104,7 +109,12 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
             <div className="relative z-10 my-1">
               <div className="flex items-baseline gap-2">
                 <span className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                  {isLoading ? '...' : (totalFleetEstimate ?? loadedCount)}
+                  <AnimatedCounter
+                    value={totalFleetEstimate ?? (isTotalBusy ? undefined : loadedCount)}
+                    isLoading={isTotalBusy}
+                    loadingMax={380}
+                    fallback="-"
+                  />
                 </span>
                 <span className="text-xs font-semibold text-slate-300">
                   unit armada
@@ -117,8 +127,13 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
 
             <div className="relative z-10 pt-3 mt-2 border-t border-white/15 flex items-center justify-between text-[11px] text-slate-300">
               <span>Dimuat di halaman:</span>
-              <span className="font-bold text-white bg-white/20 px-2 py-0.5 rounded-md">
-                {isLoading ? '...' : loadedCount} armada
+              <span className="font-bold text-white bg-white/20 px-2 py-0.5 rounded-md inline-flex items-center">
+                <AnimatedCounter
+                  value={loadedCount}
+                  isLoading={isLoading}
+                  loadingMax={12}
+                />
+                <span className="ml-1">armada</span>
               </span>
             </div>
           </div>
@@ -137,7 +152,11 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
           </div>
           <div className="flex items-baseline justify-between mt-2">
             <span className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-              {isLoading ? '-' : inTransitCount}
+              <AnimatedCounter
+                value={inTransitCount}
+                isLoading={isLoading}
+                loadingMax={6}
+              />
             </span>
             <span className="text-[11px] font-bold text-[#1E6BD6] bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
               {loadedCount > 0
@@ -160,7 +179,11 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
           </div>
           <div className="flex items-baseline justify-between mt-2">
             <span className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-              {isLoading ? '-' : stoppedCount}
+              <AnimatedCounter
+                value={stoppedCount}
+                isLoading={isLoading}
+                loadingMax={10}
+              />
             </span>
             <span className="text-[11px] font-bold text-[#16A34A] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
               {loadedCount > 0
@@ -183,7 +206,11 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
           </div>
           <div className="flex items-baseline justify-between mt-2">
             <span className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-              {isLoading ? '-' : incomingCount}
+              <AnimatedCounter
+                value={incomingCount}
+                isLoading={isLoading}
+                loadingMax={4}
+              />
             </span>
             <span className="text-[11px] font-bold text-[#B45309] bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">
               {loadedCount > 0
@@ -206,7 +233,11 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
           </div>
           <div className="flex items-baseline justify-between mt-2">
             <span className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-              {isLoading ? '-' : uniqueRoutesCount}
+              <AnimatedCounter
+                value={uniqueRoutesCount}
+                isLoading={isLoading}
+                loadingMax={12}
+              />
             </span>
             <span className="text-[11px] font-bold text-[#0B3C8C] bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
               {otherStatusCount > 0 ? `+${otherStatusCount} status lain` : 'Rute aktif'}
@@ -220,3 +251,4 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
     </section>
   );
 };
+
