@@ -34,7 +34,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   pageSize,
   totalRecords,
   currentCount,
-  pageSizeOptions = [8, 12, 24, 48],
+  pageSizeOptions = [5, 10, 20, 50],
   isFetching = false,
   isTotalLoading = false,
   hasNextPage = false,
@@ -54,6 +54,10 @@ export const Pagination: React.FC<PaginationProps> = ({
   // Generate compact page layout (max 7 items with ellipsis)
   const effectiveTotalPages = totalPages ?? (hasNextPage ? currentPage + 1 : currentPage);
   const pageItems = generatePageNumbers(currentPage, effectiveTotalPages);
+
+  const effectivePageSizeOptions = pageSizeOptions.includes(pageSize)
+    ? pageSizeOptions
+    : [...pageSizeOptions, pageSize].sort((a, b) => a - b);
 
   return (
     <div
@@ -98,7 +102,7 @@ export const Pagination: React.FC<PaginationProps> = ({
               disabled={isFetching}
               className="appearance-none bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-slate-800 text-xs font-semibold rounded-xl pl-3 pr-7 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#1E6BD6]/30 focus:border-[#1E6BD6] transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              {pageSizeOptions.map((size) => (
+              {effectivePageSizeOptions.map((size) => (
                 <option key={size} value={size}>
                   {size} per halaman
                 </option>

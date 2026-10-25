@@ -42,20 +42,13 @@ export function useCountUp({
   });
 
   const currentValueRef = useRef<number>(displayNumber ?? startValue);
-  const isReducedMotion = useRef(
+  const isReducedMotion =
     typeof window !== 'undefined' &&
-      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches,
-  );
+    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
   useEffect(() => {
-    // If user prefers reduced motion, bypass all animations
-    if (isReducedMotion.current) {
-      if (isLoading) {
-        setDisplayNumber(null);
-      } else {
-        setDisplayNumber(typeof value === 'number' ? value : null);
-        currentValueRef.current = typeof value === 'number' ? value : 0;
-      }
+    // If user prefers reduced motion, bypass all animations completely
+    if (isReducedMotion) {
       return;
     }
 
@@ -95,18 +88,23 @@ export function useCountUp({
 
     // --- CASE 2: Finished loading or not loading ---
     if (typeof value !== 'number') {
-      setDisplayNumber(null);
-      return;
+      currentValueRef.current = 0;
+      const rafId = requestAnimationFrame(() => {
+        setDisplayNumber(null);
+      });
+      return () => cancelAnimationFrame(rafId);
     }
 
     // Ease-out animation to the target value
     const startVal = currentValueRef.current;
     const targetVal = value;
 
-    // If already at target value, snap and done
+    // If already at target value, ensure state matches via RAF if needed
     if (startVal === targetVal) {
-      setDisplayNumber(targetVal);
-      return;
+      const rafId = requestAnimationFrame(() => {
+        setDisplayNumber(targetVal);
+      });
+      return () => cancelAnimationFrame(rafId);
     }
 
     let rafId: number;
@@ -138,13 +136,18 @@ export function useCountUp({
     return () => {
       cancelAnimationFrame(rafId);
     };
-  }, [value, isLoading, duration, loadingMax]);
+  }, [value, isLoading, duration, loadingMax, isReducedMotion]);
+
+  // If user prefers reduced motion, directly derive the target value without animation
+  const effectiveNumber = isReducedMotion
+    ? (isLoading ? null : (typeof value === 'number' ? value : null))
+    : displayNumber;
 
   const formattedText =
-    displayNumber !== null ? formatter(displayNumber) : fallback;
+    effectiveNumber !== null ? formatter(effectiveNumber) : fallback;
 
   return {
-    rawNumber: displayNumber,
+    rawNumber: effectiveNumber,
     formattedText,
     isCounting: isLoading,
   };

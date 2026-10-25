@@ -6,9 +6,11 @@ import type {
 } from '../types/mbta';
 import { StatusBadge } from './StatusBadge';
 import {
+  formatBearing,
   formatCoordinates,
   formatDateTime,
   formatRelativeTime,
+  formatSpeed,
   getRawCoordinatesString,
   humanizeOccupancy,
   normalizeHexColor,
@@ -183,13 +185,20 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
             {attributes.speed !== null && (
               <span className="flex items-center gap-1 font-medium text-slate-700">
                 <span className="text-slate-400">Kecepatan:</span>
-                <span>{Math.round(attributes.speed)} mph</span>
+                <span title={formatSpeed(attributes.speed)}>
+                  {(attributes.speed * 3.6).toFixed(1)} km/jam
+                </span>
               </span>
             )}
             {attributes.bearing !== null && (
               <span className="flex items-center gap-1">
                 <span className="text-slate-400">Arah:</span>
-                <span className="font-mono text-slate-700">{attributes.bearing}&deg;</span>
+                <span
+                  className="font-mono text-slate-700"
+                  title={formatBearing(attributes.bearing)}
+                >
+                  {attributes.bearing}&deg;
+                </span>
               </span>
             )}
             {occupancyText && (

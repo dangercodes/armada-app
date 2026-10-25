@@ -108,7 +108,7 @@ export function useVehicleTotalCount({
  * - Integrates exact total record and total page computation.
  */
 export function useVehicles(params: VehicleQueryParams = {}) {
-  const effectiveLimit = params.pageSize ?? params.limit ?? 12;
+  const effectiveLimit = params.pageSize ?? params.limit ?? 10;
   const effectivePage =
     params.page ??
     (params.offset !== undefined ? Math.floor(params.offset / effectiveLimit) + 1 : 1);

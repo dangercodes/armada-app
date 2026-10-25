@@ -43,24 +43,33 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
   initialStop,
 }) => {
   const [copied, setCopied] = useState(false);
-  const [isOpeningSkeleton, setIsOpeningSkeleton] = useState(true);
+  const [prevVehicleId, setPrevVehicleId] = useState<string | null>(null);
+  const [isOpeningSkeleton, setIsOpeningSkeleton] = useState(false);
   const [isRefreshingSkeleton, setIsRefreshingSkeleton] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
 
-  // Trigger loading skeleton animation for 500ms on modal open or when vehicle changes
-  useEffect(() => {
+  // Sync skeleton state when modal opens or target vehicle changes
+  const currentVehicleId = isOpen ? (vehicle?.id ?? null) : null;
+  if (currentVehicleId !== prevVehicleId) {
+    setPrevVehicleId(currentVehicleId);
     if (isOpen) {
       setIsOpeningSkeleton(true);
-      const timer = setTimeout(() => {
-        setIsOpeningSkeleton(false);
-      }, 500);
-      return () => clearTimeout(timer);
     } else {
       setIsOpeningSkeleton(false);
       setIsRefreshingSkeleton(false);
     }
-  }, [isOpen, vehicle?.id]);
+  }
+
+  // Dismiss skeleton animation after 500ms
+  useEffect(() => {
+    if (isOpen && isOpeningSkeleton) {
+      const timer = setTimeout(() => {
+        setIsOpeningSkeleton(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, isOpeningSkeleton]);
 
   // Determine if missing relationship data requires fetching /vehicles/{id}?include=route,trip,stop
   const routeId = vehicle?.relationships.route?.data?.id;

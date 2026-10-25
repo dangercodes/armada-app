@@ -30,6 +30,7 @@ export default function App() {
 
   const [selectedVehicle, setSelectedVehicle] = useState<MbtaVehicleResource | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
   const lastClosedTimeRef = useRef<number>(0);
   const vehicleSectionRef = useRef<HTMLDivElement>(null);
 
@@ -41,6 +42,19 @@ export default function App() {
     tripIds: tripIds.length > 0 ? tripIds : undefined,
     include: ['route', 'trip', 'stop'],
   });
+
+  // Handler for manual dashboard refresh: triggers live API refetch and shows card skeleton
+  const handleManualRefresh = async () => {
+    setIsManualRefreshing(true);
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 600));
+    try {
+      await Promise.all([vehiclesQuery.refetch(), minDelay]);
+    } finally {
+      setIsManualRefreshing(false);
+    }
+  };
+
+  const isGridLoading = vehiclesQuery.isLoading || isManualRefreshing;
 
   // Index included resources (routes, trips, stops) for O(1) card lookups
   const { routes, trips, stops } = useMemo(() => {
@@ -112,8 +126,8 @@ export default function App() {
       {/* 1. Compact Application Header */}
       <AppHeader
         lastUpdated={lastUpdatedDate}
-        isFetching={vehiclesQuery.isFetching}
-        onRefresh={() => vehiclesQuery.refetch()}
+        isFetching={vehiclesQuery.isFetching || isManualRefreshing}
+        onRefresh={handleManualRefresh}
       />
 
       {/* Main Dashboard Container */}
@@ -123,7 +137,7 @@ export default function App() {
         <DashboardSummary
           vehicles={vehiclesQuery.data?.data ?? []}
           totalFleetEstimate={vehiclesQuery.totalRecords}
-          isLoading={vehiclesQuery.isLoading}
+          isLoading={isGridLoading}
           isTotalLoading={vehiclesQuery.isTotalLoading}
         />
 
@@ -134,13 +148,13 @@ export default function App() {
           selectedTripIds={tripIds}
           onTripIdsChange={setTripIds}
           onResetFilters={resetFilters}
-          isFetchingVehicles={vehiclesQuery.isFetching}
+          isFetchingVehicles={vehiclesQuery.isFetching || isManualRefreshing}
         />
 
         {/* Anchor reference for smooth pagination scrolling */}
         <div ref={vehicleSectionRef} className="scroll-mt-20">
           {/* Subtle Fetching Indicator during page transitions when previous data is kept */}
-          {vehiclesQuery.isFetching && !vehiclesQuery.isLoading && (
+          {vehiclesQuery.isFetching && !vehiclesQuery.isLoading && !isManualRefreshing && (
             <div
               role="status"
               aria-live="polite"
@@ -160,7 +174,7 @@ export default function App() {
           )}
 
           {/* 5. Responsive Vehicle Card Grid with Loading / Error / Empty states */}
-          {vehiclesQuery.isLoading ? (
+          {isGridLoading ? (
             <VehicleGrid
               vehicles={[]}
               isLoading={true}
@@ -169,7 +183,7 @@ export default function App() {
           ) : vehiclesQuery.isError ? (
             <ErrorState
               error={vehiclesQuery.error}
-              onRetry={() => vehiclesQuery.refetch()}
+              onRetry={handleManualRefresh}
             />
           ) : !vehiclesQuery.data?.data || vehiclesQuery.data.data.length === 0 ? (
             hasActiveFilters ? (
@@ -208,7 +222,7 @@ export default function App() {
           pageSize={pageSize}
           totalRecords={vehiclesQuery.totalRecords}
           currentCount={vehiclesQuery.data?.data?.length ?? 0}
-          pageSizeOptions={[8, 12, 24, 48]}
+          pageSizeOptions={[5, 10, 20, 50]}
           isFetching={vehiclesQuery.isFetching}
           isTotalLoading={vehiclesQuery.isTotalLoading}
           hasNextPage={vehiclesQuery.hasNextPage}
