@@ -222,7 +222,7 @@ export default function App() {
           pageSize={pageSize}
           totalRecords={vehiclesQuery.totalRecords}
           currentCount={vehiclesQuery.data?.data?.length ?? 0}
-          pageSizeOptions={[5, 10, 20, 50]}
+          pageSizeOptions={[8, 12, 16, 20, 24, 32]}
           isFetching={vehiclesQuery.isFetching}
           isTotalLoading={vehiclesQuery.isTotalLoading}
           hasNextPage={vehiclesQuery.hasNextPage}

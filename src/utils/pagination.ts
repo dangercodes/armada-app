@@ -1,20 +1,4 @@
 /**
- * Utility functions for MBTA pagination calculation and navigation.
- * 
- * Strategy for MBTA API Total Count:
- * MBTA V3 API does not provide a direct `meta.total` count.
- * However, it provides JSON:API links (`links.last`).
- * 1. Extract `page[offset]` from `links.last`.
- * 2. Fetch the last page with `page[limit]=pageSize&page[offset]=lastOffset`
- *    to count exact remaining items on the final page.
- * 3. Total records = `lastOffset + lastPageItemCount`.
- * 4. Total pages = `Math.ceil(totalRecords / pageSize)`.
- * 
- * If `links.last` is missing or cannot be parsed, total is treated as unknown (null)
- * without fabricating a false count.
- */
-
-/**
  * Extracts the `page[offset]` query parameter from an MBTA pagination link URL.
  */
 export function parseOffsetFromUrl(url?: string | null): number | null {
@@ -72,10 +56,6 @@ export function calculateTotalPagesFromLastOffset(lastOffset: number, limit: num
 
 /**
  * Formats the data range display string.
- * Example outputs:
- * - "Menampilkan 11–20 dari 42 data"
- * - "Menampilkan 1–10 data" (when total is unknown)
- * - "Tidak ada data" (when currentCount is 0)
  */
 export function formatDataRange(
   currentOffset: number,
@@ -98,12 +78,6 @@ export function formatDataRange(
 
 /**
  * Generates an array of page numbers with compact ellipsis for pagination navigation.
- * Designed to maintain a stable, compact layout on both desktop and mobile screens.
- * 
- * Example for 10 pages:
- * - Page 1 -> [1, 2, 3, 4, 5, '...', 10]
- * - Page 5 -> [1, '...', 4, 5, 6, '...', 10]
- * - Page 10 -> [1, '...', 6, 7, 8, 9, 10]
  */
 export function generatePageNumbers(
   currentPage: number,

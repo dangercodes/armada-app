@@ -34,7 +34,7 @@ export const Pagination: React.FC<PaginationProps> = ({
   pageSize,
   totalRecords,
   currentCount,
-  pageSizeOptions = [5, 10, 20, 50],
+  pageSizeOptions = [8, 12, 16, 20, 24, 32],
   isFetching = false,
   isTotalLoading = false,
   hasNextPage = false,

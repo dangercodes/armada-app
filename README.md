@@ -36,7 +36,7 @@ Aplikasi **Sistem Manajemen Armada** dirancang untuk operator dashboard transpor
 | Modul | Kebutuhan PRD | Deskripsi Implementasi |
 | :--- | :--- | :--- |
 | **Grid Kartu Armada** | FR-1, FR-2 | Menampilkan label kendaraan, lencana status (`IN_TRANSIT_TO`, `STOPPED_AT`, `INCOMING_AT`), koordinat geodetik lintang/bujur dengan aksi salin satu klik, waktu pembaruan relatif & absolut, kecepatan metrik (km/jam), sudut hadap (*bearing*), dan aksen warna rute resmi. |
-| **Paginasi Server-Side** | FR-3 | Rentang data dinamis (contoh: *"Menampilkan 1–10 dari 450 data"*), pilihan ukuran per halaman (`5, 10, 20, 50`), kalkulasi total halaman dan total armada berbasis link `last`, serta navigasi tombol aman batas. |
+| **Paginasi Server-Side** | FR-3 | Rentang data dinamis (contoh: *"Menampilkan 1–8 dari 450 data"*), pilihan ukuran per halaman kelipatan 4 (`8, 12, 16, 20, 24, 32`) agar tata letak grid kartu 4 kolom selalu terisi penuh rapi, kalkulasi total halaman dan total armada berbasis link `last`, serta navigasi tombol aman batas. |
 | **Filter Multi-Select Rute** | FR-4, FR-6 | Dropdown multi-pilih dengan infinite scroll otomatis (lazy load 20 rute per halaman), chip rute dengan warna MBTA, pencarian teks, dan filter chip yang dapat dihapus individual. |
 | **Filter Multi-Select Trip** | FR-5, FR-6 | Dropdown multi-pilih trip berelasi rute. Dilengkapi fitur *Active Trip Pinning* (trip dengan armada aktif di jalan raya disematkan di posisi teratas berlabel `🟢 Beroperasi`). |
 | **Detail Modal & Peta** | FR-7, FR-8, FR-9 | Modal detail 2 kolom responsif: data lengkap armada, rute, trip, halte peron, okupansi, dan peta interaktif Leaflet dengan marker bus kustom SVG yang panah arahnya berputar mengikuti derajat *bearing*. |
@@ -152,7 +152,7 @@ API MBTA tidak menyediakan kolom `meta.total` atau jumlah data keseluruhan secar
    - Jika pengguna berada di halaman lain, query paralel ringan memanggil halaman terakhir untuk menghitung sisa item di halaman tersebut.
    - **Rumus Total Data:** $\text{totalRecords} = \text{offset}_{\text{last}} + \text{itemCount}_{\text{last}}$.
    - **Rumus Total Halaman:** $\text{totalPages} = \lceil \text{totalRecords} / \text{pageSize} \rceil$.
-3. **Pilihan Ukuran Halaman:** Pengguna dapat memilih `5, 10, 20, 50` data per halaman. Nilai default adalah `10`.
+3. **Pilihan Ukuran Halaman:** Pengguna dapat memilih `8, 12, 16, 20, 24, 32` data per halaman (kelipatan 4 untuk menjaga grid responsif 4 kolom selalu terisi penuh). Nilai default adalah `8`.
 4. **Pencegahan Kedipan (*Flicker-Free*):** Menggunakan `placeholderData: keepPreviousData` pada TanStack Query sehingga kartu armada halaman sebelumnya tetap ditampilkan dengan indikator halus saat data halaman baru diunduh.
 
 ---
@@ -161,7 +161,7 @@ API MBTA tidak menyediakan kolom `meta.total` atau jumlah data keseluruhan secar
 
 Seluruh parameter dashboard tersinkronisasi dua arah ke query URL peramban:
 
-$$\text{Format URL: } \texttt{/?routes=Red,1\&trips=78978556\&page=1\&pageSize=10}$$
+$$\text{Format URL: } \texttt{/?routes=Red,1\&trips=78978556\&page=1\&pageSize=8}$$
 
 ### Aturan Alur Filter:
 1. **Multi-Pilih:** Filter rute dan trip mendukung banyak pilihan sekaligus yang dikirim ke API sebagai daftar dipisah tanda koma (`filter[route]=Red,Blue`).

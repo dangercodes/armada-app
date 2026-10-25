@@ -45,11 +45,6 @@ export class MbtaApiError extends Error {
   }
 }
 
-/**
- * Builds a query string adhering to MBTA v3 JSON:API parameter conventions:
- * - Arrays are serialized as comma-separated values (e.g. filter[route]=Red,Blue)
- * - Undefined and null values are omitted
- */
 export function buildQueryString(
   params?: MbtaRequestOptions['params'],
 ): string {
@@ -75,14 +70,6 @@ export function buildQueryString(
   return query ? `?${query}` : '';
 }
 
-/**
- * Reusable typed fetch client for the MBTA V3 API.
- * 
- * - Accepts endpoint paths and query params
- * - Automatically injects VITE_MBTA_API_KEY via x-api-key header when configured
- * - Supports AbortSignal for query cancellation
- * - Provides typed error handling for 400, 401, 403, 429, and 5xx responses
- */
 export async function mbtaFetch<T>(
   endpoint: string,
   options: MbtaRequestOptions = {},

@@ -7,10 +7,6 @@ import type {
 
 /**
  * Fetches transit trips from MBTA /trips endpoint.
- *
- * NOTE: As validated against the live MBTA API, the /trips endpoint requires
- * at least one filter (such as filter[route] or filter[id]). Calling /trips without
- * any filter results in HTTP 400: "At least one filter[] is required."
  */
 export async function getTrips(
   params: TripQueryParams = {},

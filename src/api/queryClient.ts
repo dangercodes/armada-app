@@ -30,13 +30,6 @@ export const mbtaKeys = {
     [...mbtaKeys.trips(), 'detail', id] as const,
 };
 
-/**
- * Shared QueryClient instance configured with production-grade defaults:
- * - 30s stale time to balance real-time fleet freshness with rate limits
- * - 5m garbage collection
- * - Smart retries that abort on client errors (400, 401, 403, 404)
- * - Window focus refetch disabled to conserve quota
- */
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

@@ -6,11 +6,6 @@ import type {
   VehicleQueryParams,
 } from '../types/mbta';
 
-/**
- * Fetches vehicles from MBTA /vehicles endpoint.
- *
- * Supports pagination, route/trip filters, and included relationships (route, trip, stop).
- */
 export async function getVehicles(
   params: VehicleQueryParams = {},
   signal?: AbortSignal,

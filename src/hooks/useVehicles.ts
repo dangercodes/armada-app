@@ -14,19 +14,6 @@ export interface UseVehicleTotalCountOptions {
   hasNextPage?: boolean;
 }
 
-/**
- * Calculates exact total records and total pages using MBTA JSON:API pagination links.
- * 
- * Strategy:
- * 1. Read `links.last` from response.
- * 2. Parse the final page's `page[offset]`.
- * 3. If currently viewing the last page, use currentCount directly (no network call).
- * 4. If on another page, fetch the last page (limit=pageSize, offset=lastOffset) to get exact item count.
- * 5. Total records = lastOffset + lastPageItemCount.
- * 6. Total pages = Math.ceil(totalRecords / pageSize).
- * 7. Results are cached via TanStack Query to eliminate redundant requests.
- * 8. If links.last is missing and hasNextPage is true, total is kept as null without guessing.
- */
 export function useVehicleTotalCount({
   lastUrl,
   currentOffset,
@@ -102,13 +89,9 @@ export function useVehicleTotalCount({
 
 /**
  * Hook to fetch paginated MBTA vehicles with full server-side pagination support.
- * 
- * - Includes page, pageSize, filters, and relationships in the TanStack query key.
- * - Uses placeholderData: keepPreviousData to ensure seamless page transitions without a blank grid.
- * - Integrates exact total record and total page computation.
  */
 export function useVehicles(params: VehicleQueryParams = {}) {
-  const effectiveLimit = params.pageSize ?? params.limit ?? 10;
+  const effectiveLimit = params.pageSize ?? params.limit ?? 8;
   const effectivePage =
     params.page ??
     (params.offset !== undefined ? Math.floor(params.offset / effectiveLimit) + 1 : 1);

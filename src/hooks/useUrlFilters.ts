@@ -8,8 +8,8 @@ export interface UrlFilters {
 }
 
 const DEFAULT_PAGE = 1;
-const DEFAULT_PAGE_SIZE = 10;
-const VALID_PAGE_SIZES = [5, 10, 20, 50];
+const DEFAULT_PAGE_SIZE = 8;
+const VALID_PAGE_SIZES = [8, 12, 16, 20, 24, 32];
 
 export function parseUrlFilters(): UrlFilters {
   if (typeof window === 'undefined') {
@@ -45,7 +45,7 @@ export function parseUrlFilters(): UrlFilters {
   const pageParam = parseInt(params.get('page') || '1', 10);
   const page = Number.isInteger(pageParam) && pageParam >= 1 ? pageParam : DEFAULT_PAGE;
 
-  // Parse page size (must be one of valid page sizes 5, 10, 20, 50)
+  // Parse page size (must be one of valid page sizes: 8, 12, 16, 20, 24, 32)
   const pageSizeParam = parseInt(params.get('pageSize') || String(DEFAULT_PAGE_SIZE), 10);
   const pageSize = VALID_PAGE_SIZES.includes(pageSizeParam)
     ? pageSizeParam
