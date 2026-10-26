@@ -63,7 +63,7 @@ const CustomMenuList = (props: MenuListProps<RouteOption, true>) => {
   const scrollPosRef = useRef<number>(0);
 
 
-  // Preserve user's scroll position and container element on scroll events
+  // Menjaga posisi scroll pengguna saat event scroll berlangsung
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     listElRef.current = e.currentTarget;
     scrollPosRef.current = e.currentTarget.scrollTop;
@@ -72,7 +72,7 @@ const CustomMenuList = (props: MenuListProps<RouteOption, true>) => {
     }
   };
 
-  // Restore scroll position before paint if an option update caused scrollTop to drop to 0
+  // Pulihkan posisi scroll sebelum proses render jika penambahan opsi mereset scrollTop ke 0
   useLayoutEffect(() => {
     const el = listElRef.current;
     if (el && scrollPosRef.current > 0 && el.scrollTop < scrollPosRef.current) {
@@ -110,7 +110,7 @@ const CustomMenuList = (props: MenuListProps<RouteOption, true>) => {
   );
 };
 
-// Custom Option rendering with route color pill, short name, and long name
+// Render opsi rute kustom dengan badge warna rute, nama pendek, dan nama panjang
 const CustomOption = (props: OptionProps<RouteOption, true, GroupBase<RouteOption>>) => {
   const route = props.data.route;
   const hexColor = route?.attributes.color ? `#${route.attributes.color}` : '#1E6BD6';
@@ -121,7 +121,7 @@ const CustomOption = (props: OptionProps<RouteOption, true, GroupBase<RouteOptio
   return (
     <components.Option {...props}>
       <div className="flex items-center gap-2.5 py-0.5">
-        {/* Route Color Pill / Badge */}
+        {/* Badge / Pill Warna Rute */}
         <span
           className="px-2 py-0.5 rounded-md text-[11px] font-bold tracking-tight shrink-0 shadow-2xs flex items-center justify-center min-w-[32px] text-center"
           style={{ backgroundColor: hexColor, color: textColor }}
@@ -129,7 +129,7 @@ const CustomOption = (props: OptionProps<RouteOption, true, GroupBase<RouteOptio
           {shortName || route?.id || props.data.value}
         </span>
 
-        {/* Route Name & ID */}
+        {/* Nama & ID Rute */}
         <div className="flex flex-col min-w-0 flex-1">
           <span className="text-xs font-semibold text-slate-800 truncate">
             {longName}
@@ -141,7 +141,7 @@ const CustomOption = (props: OptionProps<RouteOption, true, GroupBase<RouteOptio
           )}
         </div>
 
-        {/* Selected checkmark indicator */}
+        {/* Indikator centang rute terpilih */}
         {props.isSelected && (
           <svg className="w-4 h-4 text-[#1E6BD6] shrink-0" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -152,7 +152,7 @@ const CustomOption = (props: OptionProps<RouteOption, true, GroupBase<RouteOptio
   );
 };
 
-// Custom MultiValue label inside the input field
+// Label MultiValue kustom di dalam input field
 const CustomMultiValueLabel = (props: MultiValueGenericProps<RouteOption, true, GroupBase<RouteOption>>) => {
   const route = props.data.route;
   const hexColor = route?.attributes.color ? `#${route.attributes.color}` : '#1E6BD6';
@@ -173,7 +173,7 @@ const CustomMultiValueLabel = (props: MultiValueGenericProps<RouteOption, true, 
   );
 };
 
-// Custom MultiValue remove button
+// Tombol hapus MultiValue kustom
 const CustomMultiValueRemove = (props: MultiValueRemoveProps<RouteOption, true>) => {
   return (
     <components.MultiValueRemove {...props}>
@@ -184,7 +184,7 @@ const CustomMultiValueRemove = (props: MultiValueRemoveProps<RouteOption, true>)
   );
 };
 
-// Stable components configuration passed to react-select
+// Konfigurasi komponen stabil untuk react-select
 const routeSelectComponents = {
   MenuList: CustomMenuList,
   Option: CustomOption,
@@ -262,7 +262,7 @@ export const RouteSelect: React.FC<RouteSelectProps> = ({
     fetchNextPage,
   } = useInfiniteRoutes({ pageSize: 20 });
 
-  // Map of all known route resources (from selected map and loaded pages)
+  // Peta (Map) seluruh data resource rute (dari rute terpilih dan halaman yang sudah dimuat)
   const routesMap = useMemo(() => {
     const map = new Map<string, MbtaRouteResource>();
     if (selectedRoutesMap) {
@@ -280,7 +280,7 @@ export const RouteSelect: React.FC<RouteSelectProps> = ({
     return map;
   }, [selectedRoutesMap, data]);
 
-  // Flatten and store all pages into RouteOption array with stable object caching
+  // Ratakan dan simpan seluruh halaman ke dalam array RouteOption dengan cache objek yang stabil
   const loadedOptions = useMemo(() => {
     const list: RouteOption[] = [];
     if (data?.pages) {
@@ -293,12 +293,11 @@ export const RouteSelect: React.FC<RouteSelectProps> = ({
     return list;
   }, [data]);
 
-  // Merge loaded options with selected options to guarantee selected items
-  // are never dropped while loading additional pages or scrolling
+  // Gabungkan opsi yang dimuat dengan opsi terpilih untuk memastikan item terpilih tidak hilang saat scroll
   const options = useMemo(() => {
     const map = new Map<string, RouteOption>();
 
-    // 1. Always include selected routes first
+    // 1. Selalu sertakan rute terpilih di urutan paling atas
     for (const id of selectedRouteIds) {
       const route = routesMap.get(id);
       if (route) {
@@ -312,7 +311,7 @@ export const RouteSelect: React.FC<RouteSelectProps> = ({
       }
     }
 
-    // 2. Add all loaded options
+    // 2. Tambahkan semua opsi yang dimuat dari API
     for (const opt of loadedOptions) {
       map.set(opt.value, opt);
     }
@@ -320,7 +319,7 @@ export const RouteSelect: React.FC<RouteSelectProps> = ({
     return Array.from(map.values());
   }, [selectedRouteIds, routesMap, loadedOptions]);
 
-  // Construct current value array for react-select
+  // Bentuk array nilai terpilih saat ini untuk react-select
   const selectValue = useMemo(() => {
     return selectedRouteIds.map((id) => {
       const found = options.find((opt) => opt.value === id);
@@ -336,7 +335,7 @@ export const RouteSelect: React.FC<RouteSelectProps> = ({
     });
   }, [selectedRouteIds, options, routesMap]);
 
-  // Custom filter function for searching routes by short_name, long_name, or route ID
+  // Fungsi filter pencarian rute berdasarkan short_name, long_name, atau ID rute
   const filterRouteOption = (
     candidate: { label: string; value: string; data: RouteOption },
     input: string,

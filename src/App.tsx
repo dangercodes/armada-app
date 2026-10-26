@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useVehicles } from './hooks/useVehicles';
 import { useUrlFilters } from './hooks/useUrlFilters';
 import {
@@ -14,8 +14,10 @@ import {
 import { createIncludedLookup } from './utils/lookup';
 import type { MbtaVehicleResource } from './types/mbta';
 
+const VEHICLE_INCLUDES = ['route', 'trip', 'stop'];
+
 export default function App() {
-  // Synchronized state with URL query parameters (?routes=...&trips=...&page=...&pageSize=...)
+  // State tersinkronisasi dengan parameter URL (?routes=...&trips=...&page=...&pageSize=...)
   const {
     routeIds,
     tripIds,
@@ -34,16 +36,16 @@ export default function App() {
   const lastClosedTimeRef = useRef<number>(0);
   const vehicleSectionRef = useRef<HTMLDivElement>(null);
 
-  // Fetch paginated vehicles with server-side page[limit], page[offset], and route/trip filters
+  // Ambil data armada berpaginasi dengan server-side page[limit], page[offset], serta filter rute/trip
   const vehiclesQuery = useVehicles({
     page,
     pageSize,
     routeIds: routeIds.length > 0 ? routeIds : undefined,
     tripIds: tripIds.length > 0 ? tripIds : undefined,
-    include: ['route', 'trip', 'stop'],
+    include: VEHICLE_INCLUDES,
   });
 
-  // Handler for manual dashboard refresh: triggers live API refetch and shows card skeleton
+  // Handler refresh manual dashboard: memicu refetch API dan menampilkan skeleton kartu
   const handleManualRefresh = async () => {
     setIsManualRefreshing(true);
     const minDelay = new Promise((resolve) => setTimeout(resolve, 600));
@@ -56,37 +58,39 @@ export default function App() {
 
   const isGridLoading = vehiclesQuery.isLoading || isManualRefreshing;
 
-  // Index included resources (routes, trips, stops) for O(1) card lookups
+  // Indeks data relasi (rute, trip, halte) untuk lookup cepat kartu dengan kompleksitas O(1)
   const { routes, trips, stops } = useMemo(() => {
     return createIncludedLookup(vehiclesQuery.data?.included);
   }, [vehiclesQuery.data?.included]);
 
-  // Handle page size change with automatic reset to page 1
+  // Menangani perubahan ukuran halaman dan otomatis reset ke halaman 1
   const handlePageSizeChange = (newPageSize: number) => {
     setPageSize(newPageSize);
   };
 
-  // Safe page change with boundary checks
+  // Navigasi halaman yang aman dengan validasi batas halaman
   const handlePageChange = (newPage: number) => {
     if (newPage < 1) return;
     if (vehiclesQuery.totalPages !== null && newPage > vehiclesQuery.totalPages) return;
     setPage(newPage);
 
-    // Smooth scroll back to vehicle section for optimal user navigation
+    // Scroll halus kembali ke bagian kartu armada saat ganti halaman
     if (vehicleSectionRef.current) {
       const topOffset = vehicleSectionRef.current.getBoundingClientRect().top + window.scrollY - 80;
       window.scrollTo({ top: Math.max(0, topOffset), behavior: 'smooth' });
     }
   };
 
-  // Prevent navigation to invalid pages when total count changes
-  if (
-    vehiclesQuery.totalPages !== null &&
-    vehiclesQuery.totalPages > 0 &&
-    page > vehiclesQuery.totalPages
-  ) {
-    setPage(vehiclesQuery.totalPages);
-  }
+  // Mencegah posisi halaman melebihi total halaman yang tersedia saat filter berubah
+  useEffect(() => {
+    if (
+      vehiclesQuery.totalPages !== null &&
+      vehiclesQuery.totalPages > 0 &&
+      page > vehiclesQuery.totalPages
+    ) {
+      setPage(vehiclesQuery.totalPages);
+    }
+  }, [vehiclesQuery.totalPages, page, setPage]);
 
   const lastUpdatedDate = vehiclesQuery.dataUpdatedAt
     ? new Date(vehiclesQuery.dataUpdatedAt)
@@ -99,7 +103,7 @@ export default function App() {
   };
 
   const handleVehicleClick = (vehicle: MbtaVehicleResource) => {
-    // Prevent phantom click-through (ghost click) on underlying cards immediately after closing modal
+    // Mencegah klik tembus (ghost click) pada kartu di bawah modal sesaat setelah modal ditutup
     if (Date.now() - lastClosedTimeRef.current < 400) {
       return;
     }
@@ -123,17 +127,17 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#F5F8FC] text-slate-800 flex flex-col font-sans antialiased selection:bg-[#1E6BD6]/20">
-      {/* 1. Compact Application Header */}
+      {/* 1. Header Aplikasi Kompak */}
       <AppHeader
         lastUpdated={lastUpdatedDate}
         isFetching={vehiclesQuery.isFetching || isManualRefreshing}
         onRefresh={handleManualRefresh}
       />
 
-      {/* Main Dashboard Container */}
+      {/* Kontainer Utama Dashboard */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
 
-        {/* 2 & 3. Hero Introduction & Live Metrics Summary */}
+        {/* 2 & 3. Banner Hero & Ringkasan Metrik Operasional Langsung */}
         <DashboardSummary
           vehicles={vehiclesQuery.data?.data ?? []}
           totalFleetEstimate={vehiclesQuery.totalRecords}
@@ -141,7 +145,7 @@ export default function App() {
           isTotalLoading={vehiclesQuery.isTotalLoading}
         />
 
-        {/* 4. Multi-Select Route & Trip Filters (Phase 4) */}
+        {/* 4. Filter Multi-Pilih Rute & Perjalanan */}
         <FilterToolbar
           selectedRouteIds={routeIds}
           onRouteIdsChange={setRouteIds}
@@ -151,9 +155,9 @@ export default function App() {
           isFetchingVehicles={vehiclesQuery.isFetching || isManualRefreshing}
         />
 
-        {/* Anchor reference for smooth pagination scrolling */}
+        {/* Referensi jangkar untuk scroll halus paginasi */}
         <div ref={vehicleSectionRef} className="scroll-mt-20">
-          {/* Subtle Fetching Indicator during page transitions when previous data is kept */}
+          {/* Indikator sinkronisasi halus saat transisi data antar halaman */}
           {vehiclesQuery.isFetching && !vehiclesQuery.isLoading && !isManualRefreshing && (
             <div
               role="status"
@@ -173,7 +177,7 @@ export default function App() {
             </div>
           )}
 
-          {/* 5. Responsive Vehicle Card Grid with Loading / Error / Empty states */}
+          {/* 5. Grid Kartu Armada Responsif dengan status Loading / Error / Kosong */}
           {isGridLoading ? (
             <VehicleGrid
               vehicles={[]}
@@ -215,7 +219,7 @@ export default function App() {
           )}
         </div>
 
-        {/* 6. Fully Functional Server-Side Pagination Component (Phase 3) */}
+        {/* 6. Komponen Paginasi Server-Side Lengkap */}
         <Pagination
           currentPage={page}
           totalPages={vehiclesQuery.totalPages}
@@ -239,7 +243,7 @@ export default function App() {
         </div>
       </footer>
 
-      {/* 7. Accessible Vehicle Detail Modal with Interactive Leaflet Map (Phase 5) */}
+      {/* 7. Modal Detail Armada Beraksesibilitas dengan Peta Interaktif Leaflet */}
       <VehicleModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}

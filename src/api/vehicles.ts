@@ -6,6 +6,9 @@ import type {
   VehicleQueryParams,
 } from '../types/mbta';
 
+/**
+ * Mengambil daftar armada aktif dari endpoint MBTA /vehicles.
+ */
 export async function getVehicles(
   params: VehicleQueryParams = {},
   signal?: AbortSignal,
@@ -44,7 +47,7 @@ export async function getVehicles(
 }
 
 /**
- * Fetches a single vehicle by ID.
+ * Mengambil data satu armada spesifik berdasarkan ID.
  */
 export async function getVehicleById(
   id: string,

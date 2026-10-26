@@ -16,9 +16,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   return (
     <header className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-2xs backdrop-blur-xs bg-white/95">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        {/* Brand & Title */}
+        {/* Logo & Judul Aplikasi */}
         <div className="flex items-center gap-3">
-          {/* Transjakarta Official Logo */}
+          {/* Logo Resmi Transjakarta */}
           <img
             src={logoTj}
             alt="Transjakarta"
@@ -37,9 +37,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           </div>
         </div>
 
-        {/* Live Refresh & Status Bar */}
+        {/* Bar Pembaruan & Status Sinkronisasi */}
         <div className="flex items-center gap-3 sm:gap-4">
-          {/* Last Updated Timestamp */}
+          {/* Waktu Sinkronisasi Terakhir */}
           {lastUpdated && (
             <div className="hidden md:flex flex-col text-right">
               <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
@@ -54,7 +54,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             </div>
           )}
 
-          {/* Manual Refresh Button */}
+          {/* Tombol Muat Ulang Manual */}
           {onRefresh && (
             <button
               type="button"

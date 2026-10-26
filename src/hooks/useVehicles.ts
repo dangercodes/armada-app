@@ -1,94 +1,10 @@
-import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getVehicles } from '../api/vehicles';
-import { mbtaKeys } from '../api/queryClient';
 import { calculateTotalPages, parseOffsetFromUrl } from '../utils/pagination';
-import type { VehicleQueryParams } from '../types/mbta';
-
-export interface UseVehicleTotalCountOptions {
-  lastUrl?: string | null;
-  currentOffset: number;
-  currentCount: number;
-  pageSize: number;
-  routeIds?: string[];
-  tripIds?: string[];
-  hasNextPage?: boolean;
-}
-
-export function useVehicleTotalCount({
-  lastUrl,
-  currentOffset,
-  currentCount,
-  pageSize,
-  routeIds,
-  tripIds,
-  hasNextPage = false,
-}: UseVehicleTotalCountOptions) {
-  const lastOffset = parseOffsetFromUrl(lastUrl);
-
-  // Case 1: Empty dataset on page 1 with no next link
-  const isDirectEmpty = currentOffset === 0 && currentCount === 0 && !hasNextPage;
-
-  // Case 2: Entire dataset fits on a single page or end of dataset reached without 'last' link
-  const isSinglePageOrEndWithoutLast = !lastUrl && !hasNextPage;
-
-  // Case 3: User is currently on the last page
-  const isOnLastPage = lastOffset !== null && currentOffset === lastOffset;
-
-  // Should we fetch the final page to count its remainder items?
-  const shouldFetchLastPage =
-    !isDirectEmpty &&
-    !isSinglePageOrEndWithoutLast &&
-    !isOnLastPage &&
-    lastOffset !== null;
-
-  const lastPageQuery = useQuery({
-    queryKey: mbtaKeys.vehicleLastPage({
-      pageSize,
-      lastOffset: lastOffset ?? 0,
-      routeIds,
-      tripIds,
-    }),
-    queryFn: async ({ signal }) => {
-      // Lightweight fetch: no heavy include relationships needed for counting
-      const res = await getVehicles(
-        {
-          limit: pageSize,
-          offset: lastOffset ?? 0,
-          routeIds,
-          tripIds,
-        },
-        signal,
-      );
-      return res.data?.length ?? 0;
-    },
-    enabled: shouldFetchLastPage,
-    staleTime: 1000 * 60, // 60s cache
-    gcTime: 1000 * 60 * 5, // 5 min
-  });
-
-  const totalRecords: number | null = (() => {
-    if (isDirectEmpty) return 0;
-    if (isSinglePageOrEndWithoutLast) return currentOffset + currentCount;
-    if (isOnLastPage && lastOffset !== null) return lastOffset + currentCount;
-    if (lastOffset !== null) {
-      return lastPageQuery.data !== undefined ? lastOffset + lastPageQuery.data : null;
-    }
-    // Missing last link on multi-page data: cannot determine exact total
-    return null;
-  })();
-
-  const totalPages = calculateTotalPages(totalRecords, pageSize);
-
-  return {
-    totalRecords,
-    totalPages,
-    isTotalLoading: shouldFetchLastPage && lastPageQuery.isLoading,
-    lastOffset,
-  };
-}
+import type { MbtaResponse, MbtaVehicleResource, VehicleQueryParams } from '../types/mbta';
 
 /**
- * Hook to fetch paginated MBTA vehicles with full server-side pagination support.
+ * Custom Hook untuk mengambil data armada MBTA dengan pagination server-side.
  */
 export function useVehicles(params: VehicleQueryParams = {}) {
   const effectiveLimit = params.pageSize ?? params.limit ?? 8;
@@ -98,41 +14,145 @@ export function useVehicles(params: VehicleQueryParams = {}) {
   const effectiveOffset =
     params.offset !== undefined ? params.offset : (effectivePage - 1) * effectiveLimit;
 
-  // Normalized query parameters containing page, pageSize, limit, offset, and filters
-  const queryParams: VehicleQueryParams = {
-    ...params,
-    page: effectivePage,
-    pageSize: effectiveLimit,
-    limit: effectiveLimit,
-    offset: effectiveOffset,
-  };
+  // 1. State Awal
+  const [data, setData] = useState<MbtaResponse<MbtaVehicleResource[]> | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isFetching, setIsFetching] = useState<boolean>(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [dataUpdatedAt, setDataUpdatedAt] = useState<number>(0);
 
-  const query = useQuery({
-    queryKey: mbtaKeys.vehicleList(queryParams),
-    queryFn: ({ signal }) => getVehicles(queryParams, signal),
-    placeholderData: keepPreviousData,
-  });
+  // State untuk kalkulasi paginasi server-side
+  const [totalRecords, setTotalRecords] = useState<number | null>(null);
+  const [totalPages, setTotalPages] = useState<number | null>(null);
+  const [isTotalLoading, setIsTotalLoading] = useState<boolean>(false);
+  const [lastOffset, setLastOffset] = useState<number | null>(null);
 
-  const totalInfo = useVehicleTotalCount({
-    lastUrl: query.data?.links?.last,
-    currentOffset: effectiveOffset,
-    currentCount: query.data?.data?.length ?? 0,
-    pageSize: effectiveLimit,
-    routeIds: params.routeIds,
-    tripIds: params.tripIds,
-    hasNextPage: Boolean(query.data?.links?.next),
-  });
+  // Cache lokal ringan untuk hasil perhitungan halaman terakhir
+  const lastPageCacheRef = useRef<Map<string, number>>(new Map());
 
+  // Kunci primitif stabil untuk memutus infinite loop re-render
+  const routeIdsKey = (params.routeIds || []).join(',');
+  const tripIdsKey = (params.tripIds || []).join(',');
+  const includeKey = (params.include || []).join(',');
+
+  // 2. Fungsi Async untuk mengambil data armada dari REST API
+  const fetchVehicles = useCallback(async () => {
+    setIsLoading(true);
+    setIsFetching(true);
+    setError(null);
+
+    const queryParams: VehicleQueryParams = {
+      page: effectivePage,
+      pageSize: effectiveLimit,
+      limit: effectiveLimit,
+      offset: effectiveOffset,
+      routeIds: routeIdsKey ? routeIdsKey.split(',') : undefined,
+      tripIds: tripIdsKey ? tripIdsKey.split(',') : undefined,
+      include: includeKey ? includeKey.split(',') : undefined,
+    };
+
+    try {
+      const res = await getVehicles(queryParams);
+      setData(res);
+      setDataUpdatedAt(Date.now());
+
+      const currentCount = res.data?.length ?? 0;
+      const hasNext = Boolean(res.links?.next);
+      const parsedLastOffset = parseOffsetFromUrl(res.links?.last);
+      setLastOffset(parsedLastOffset);
+
+      // Skenario A: Data kosong pada halaman 1
+      if (effectiveOffset === 0 && currentCount === 0 && !hasNext) {
+        setTotalRecords(0);
+        setTotalPages(0);
+        setIsTotalLoading(false);
+      }
+      // Skenario B: Seluruh data muat di satu halaman atau akhir data tanpa link 'last'
+      else if (!res.links?.last && !hasNext) {
+        const total = effectiveOffset + currentCount;
+        setTotalRecords(total);
+        setTotalPages(calculateTotalPages(total, effectiveLimit));
+        setIsTotalLoading(false);
+      }
+      // Skenario C: Sedang berada di halaman terakhir
+      else if (parsedLastOffset !== null && effectiveOffset === parsedLastOffset) {
+        const total = parsedLastOffset + currentCount;
+        setTotalRecords(total);
+        setTotalPages(calculateTotalPages(total, effectiveLimit));
+        setIsTotalLoading(false);
+      }
+      // Skenario D: Hitung total dari offset halaman terakhir + jumlah sisa item
+      else if (parsedLastOffset !== null) {
+        const cacheKey = `${effectiveLimit}-${parsedLastOffset}-${routeIdsKey}-${tripIdsKey}`;
+        if (lastPageCacheRef.current.has(cacheKey)) {
+          const cachedCount = lastPageCacheRef.current.get(cacheKey)!;
+          const total = parsedLastOffset + cachedCount;
+          setTotalRecords(total);
+          setTotalPages(calculateTotalPages(total, effectiveLimit));
+          setIsTotalLoading(false);
+        } else {
+          setIsTotalLoading(true);
+          try {
+            const lastRes = await getVehicles({
+              limit: effectiveLimit,
+              offset: parsedLastOffset,
+              routeIds: routeIdsKey ? routeIdsKey.split(',') : undefined,
+              tripIds: tripIdsKey ? tripIdsKey.split(',') : undefined,
+            });
+            const lastCount = lastRes.data?.length ?? 0;
+            lastPageCacheRef.current.set(cacheKey, lastCount);
+            const total = parsedLastOffset + lastCount;
+            setTotalRecords(total);
+            setTotalPages(calculateTotalPages(total, effectiveLimit));
+          } catch {
+            // Jika request terakhir gagal, biarkan state sebelumnya
+          } finally {
+            setIsTotalLoading(false);
+          }
+        }
+      } else {
+        setTotalRecords(null);
+        setTotalPages(null);
+        setIsTotalLoading(false);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)));
+    } finally {
+      setIsLoading(false);
+      setIsFetching(false);
+    }
+  }, [
+    effectivePage,
+    effectiveLimit,
+    effectiveOffset,
+    routeIdsKey,
+    tripIdsKey,
+    includeKey,
+  ]);
+
+  // 3. Lifecycle hook: panggil fetch otomatis saat filter atau nomor halaman berubah
+  useEffect(() => {
+    fetchVehicles();
+  }, [fetchVehicles]);
+
+  // 4. Kembalikan state dan fungsi aksi
   return {
-    ...query,
+    data,
+    isLoading,
+    isFetching,
+    isError: Boolean(error),
+    error,
+    refetch: fetchVehicles,
+    dataUpdatedAt,
     page: effectivePage,
     pageSize: effectiveLimit,
     offset: effectiveOffset,
-    totalRecords: totalInfo.totalRecords,
-    totalPages: totalInfo.totalPages,
-    isTotalLoading: totalInfo.isTotalLoading,
-    lastOffset: totalInfo.lastOffset,
-    hasNextPage: Boolean(query.data?.links?.next),
-    hasPrevPage: Boolean(query.data?.links?.prev) || effectivePage > 1,
+    totalRecords,
+    totalPages,
+    isTotalLoading,
+    lastOffset,
+    hasNextPage: Boolean(data?.links?.next),
+    hasPrevPage: Boolean(data?.links?.prev) || effectivePage > 1,
+    isPlaceholderData: false,
   };
 }

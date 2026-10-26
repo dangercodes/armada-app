@@ -7,9 +7,9 @@ export const VehicleModalSkeleton: React.FC = () => {
       aria-label="Memuat rincian armada..."
       className="p-6 overflow-y-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 animate-pulse select-none"
     >
-      {/* LEFT COLUMN: Vehicle Details Skeleton (7 Columns) */}
+      {/* KOLOM KIRI: Skeleton Detail Armada (7 Kolom) */}
       <div className="lg:col-span-7 space-y-5">
-        {/* 1. Posisi GPS & Waktu Card */}
+        {/* 1. Kartu Posisi GPS & Waktu */}
         <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80 space-y-3">
           <div className="flex items-center justify-between">
             <div className="h-4 w-40 bg-slate-200 rounded-md" />
@@ -27,7 +27,7 @@ export const VehicleModalSkeleton: React.FC = () => {
           </div>
         </div>
 
-        {/* 2. Rute, Trip, & Halte Skeleton */}
+        {/* 2. Skeleton Rute, Perjalanan, & Halte */}
         <div className="space-y-3">
           <div className="h-3.5 w-48 bg-slate-200 rounded" />
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -43,7 +43,7 @@ export const VehicleModalSkeleton: React.FC = () => {
             </div>
           </div>
 
-          {/* Halte Card Skeleton */}
+          {/* Skeleton Kartu Halte */}
           <div className="bg-slate-50/70 p-3.5 rounded-2xl border border-slate-200/70 space-y-2">
             <div className="h-3 w-36 bg-slate-200/70 rounded" />
             <div className="h-4 w-48 bg-slate-300 rounded" />
@@ -55,7 +55,7 @@ export const VehicleModalSkeleton: React.FC = () => {
           </div>
         </div>
 
-        {/* 3. Parameter Teknis Grid Skeleton */}
+        {/* 3. Skeleton Grid Parameter Teknis */}
         <div className="space-y-3">
           <div className="h-3.5 w-44 bg-slate-200 rounded" />
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
@@ -69,7 +69,7 @@ export const VehicleModalSkeleton: React.FC = () => {
         </div>
       </div>
 
-      {/* RIGHT COLUMN: Leaflet Map Skeleton (5 Columns) */}
+      {/* KOLOM KANAN: Skeleton Peta Leaflet (5 Kolom) */}
       <div className="lg:col-span-5 flex flex-col min-h-[340px] lg:min-h-full space-y-2">
         <div className="flex items-center justify-between">
           <div className="h-4 w-36 bg-slate-200 rounded" />

@@ -1,7 +1,5 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getTrips } from '../api/trips';
-import { mbtaKeys } from '../api/queryClient';
-import { parseOffsetFromUrl } from '../utils/pagination';
 import type { MbtaResponse, MbtaTripResource } from '../types/mbta';
 
 export interface UseInfiniteTripsOptions {
@@ -10,45 +8,90 @@ export interface UseInfiniteTripsOptions {
   enabled?: boolean;
 }
 
+/**
+ * Custom Hook untuk infinite scroll daftar perjalanan (trips) MBTA.
+ */
 export function useInfiniteTrips(options: UseInfiniteTripsOptions = {}) {
   const pageSize = options.pageSize ?? 20;
   const routeIds = options.routeIds ?? [];
+  const routeIdsKey = routeIds.join(',');
   const hasRouteFilter = routeIds.length > 0;
-  const isQueryEnabled = options.enabled !== undefined ? options.enabled : hasRouteFilter;
+  const isEnabled = options.enabled !== undefined ? options.enabled : hasRouteFilter;
 
-  return useInfiniteQuery<MbtaResponse<MbtaTripResource[]>, Error>({
-    queryKey: mbtaKeys.tripInfinite({ routeIds, pageSize }),
-    queryFn: async ({ pageParam = 0, signal }) => {
-      const offset = typeof pageParam === 'number' ? pageParam : 0;
-      return getTrips(
-        {
-          routeIds,
-          limit: pageSize,
-          offset,
-        },
-        signal,
-      );
-    },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      // If last page had fewer items than pageSize, we reached the end
-      if (!lastPage.data || lastPage.data.length < pageSize) {
-        return undefined;
-      }
+  const [pages, setPages] = useState<MbtaResponse<MbtaTripResource[]>[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isFetchingNextPage, setIsFetchingNextPage] = useState<boolean>(false);
+  const [hasNextPage, setHasNextPage] = useState<boolean>(true);
+  const [isError, setIsError] = useState<boolean>(false);
+  const [error, setError] = useState<Error | null>(null);
 
-      // Try parsing next offset from JSON:API links.next
-      if (lastPage.links?.next) {
-        const nextOffset = parseOffsetFromUrl(lastPage.links.next);
-        if (nextOffset !== null) {
-          return nextOffset;
-        }
-      }
+  const isFetchingRef = useRef(false);
 
-      // Fallback calculation: page number * pageSize
-      return allPages.length * pageSize;
-    },
-    enabled: isQueryEnabled,
-    staleTime: 1000 * 60 * 2, // 2 min cache
-    gcTime: 1000 * 60 * 10,
-  });
+  // Ambil halaman pertama saat routeIds atau status enable berubah
+  const fetchInitialPage = useCallback(async () => {
+    const activeRouteIds = routeIdsKey ? routeIdsKey.split(',') : [];
+    if (!isEnabled || activeRouteIds.length === 0) {
+      setPages([]);
+      setIsLoading(false);
+      setHasNextPage(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setIsError(false);
+    setError(null);
+    isFetchingRef.current = true;
+
+    try {
+      const res = await getTrips({ routeIds: activeRouteIds, limit: pageSize, offset: 0 });
+      setPages([res]);
+      const count = res.data?.length ?? 0;
+      setHasNextPage(count >= pageSize && Boolean(res.links?.next));
+    } catch (err) {
+      setIsError(true);
+      setError(err instanceof Error ? err : new Error(String(err)));
+    } finally {
+      setIsLoading(false);
+      isFetchingRef.current = false;
+    }
+  }, [isEnabled, routeIdsKey, pageSize]);
+
+  // Ambil halaman berikutnya saat scroll
+  const fetchNextPage = useCallback(async () => {
+    const activeRouteIds = routeIdsKey ? routeIdsKey.split(',') : [];
+    if (!isEnabled || !hasNextPage || isFetchingRef.current || activeRouteIds.length === 0) return;
+
+    isFetchingRef.current = true;
+    setIsFetchingNextPage(true);
+
+    try {
+      const currentOffset = pages.reduce((sum, p) => sum + (p.data?.length ?? 0), 0);
+      const res = await getTrips({ routeIds: activeRouteIds, limit: pageSize, offset: currentOffset });
+
+      setPages((prev) => [...prev, res]);
+      const count = res.data?.length ?? 0;
+      setHasNextPage(count >= pageSize && Boolean(res.links?.next));
+    } catch (err) {
+      setIsError(true);
+      setError(err instanceof Error ? err : new Error(String(err)));
+    } finally {
+      setIsFetchingNextPage(false);
+      isFetchingRef.current = false;
+    }
+  }, [isEnabled, hasNextPage, pages, routeIdsKey, pageSize]);
+
+  useEffect(() => {
+    fetchInitialPage();
+  }, [fetchInitialPage]);
+
+  return {
+    data: { pages },
+    isLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    isError,
+    error,
+    fetchNextPage,
+    refetch: fetchInitialPage,
+  };
 }

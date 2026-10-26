@@ -6,7 +6,7 @@ import type {
 } from '../types/mbta';
 
 /**
- * Fetches transit trips from MBTA /trips endpoint.
+ * Mengambil daftar perjalanan (trips) dari endpoint MBTA /trips.
  */
 export async function getTrips(
   params: TripQueryParams = {},
@@ -37,7 +37,7 @@ export async function getTrips(
 }
 
 /**
- * Fetches a single trip by ID.
+ * Mengambil data satu perjalanan spesifik berdasarkan ID.
  */
 export async function getTripById(
   id: string,

@@ -23,7 +23,7 @@ export function parseUrlFilters(): UrlFilters {
 
   const params = new URLSearchParams(window.location.search);
 
-  // Parse routes (supports both ?routes= and ?route=)
+  // Parsing parameter rute (mendukung ?routes= dan ?route=)
   const routesParam = params.get('routes') || params.get('route') || '';
   const routeIds = routesParam
     ? routesParam
@@ -32,7 +32,7 @@ export function parseUrlFilters(): UrlFilters {
       .filter(Boolean)
     : [];
 
-  // Parse trips (supports both ?trips= and ?trip=)
+  // Parsing parameter perjalanan (mendukung ?trips= dan ?trip=)
   const tripsParam = params.get('trips') || params.get('trip') || '';
   const tripIds = tripsParam
     ? tripsParam
@@ -41,11 +41,11 @@ export function parseUrlFilters(): UrlFilters {
       .filter(Boolean)
     : [];
 
-  // Parse page number (must be integer >= 1)
+  // Parsing nomor halaman (harus bilangan bulat >= 1)
   const pageParam = parseInt(params.get('page') || '1', 10);
   const page = Number.isInteger(pageParam) && pageParam >= 1 ? pageParam : DEFAULT_PAGE;
 
-  // Parse page size (must be one of valid page sizes: 8, 12, 16, 20, 24, 32)
+  // Parsing ukuran halaman (harus salah satu dari opsi valid: 8, 12, 16, 20, 24, 32)
   const pageSizeParam = parseInt(params.get('pageSize') || String(DEFAULT_PAGE_SIZE), 10);
   const pageSize = VALID_PAGE_SIZES.includes(pageSizeParam)
     ? pageSizeParam
@@ -55,7 +55,7 @@ export function parseUrlFilters(): UrlFilters {
 }
 
 /**
- * Serializes current filters to URL search string.
+ * Mengubah filter saat ini menjadi string URL query parameters.
  */
 export function serializeUrlFilters(filters: UrlFilters): string {
   const params = new URLSearchParams();
@@ -80,7 +80,7 @@ export function serializeUrlFilters(filters: UrlFilters): string {
 export function useUrlFilters() {
   const [filters, setFilters] = useState<UrlFilters>(() => parseUrlFilters());
 
-  // Push state to browser URL whenever filters change, unless triggered by popstate
+  // Sinkronkan state ke URL browser setiap kali filter berubah
   const syncToBrowserUrl = useCallback((nextFilters: UrlFilters, replace = false) => {
     const newQuery = serializeUrlFilters(nextFilters);
     const newUrl = `${window.location.pathname}${newQuery}`;
@@ -95,7 +95,7 @@ export function useUrlFilters() {
     }
   }, []);
 
-  // Listen to browser Back/Forward (popstate) events
+  // Mendengarkan tombol Back / Forward pada browser (event popstate)
   useEffect(() => {
     const handlePopState = () => {
       const parsed = parseUrlFilters();
@@ -106,14 +106,14 @@ export function useUrlFilters() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Handlers for updating state and URL
+  // Handler untuk memperbarui state dan URL browser
   const setRouteIds = useCallback(
     (newRouteIds: string[]) => {
       setFilters((prev) => {
         const next: UrlFilters = {
           ...prev,
           routeIds: newRouteIds,
-          page: 1, // Reset pagination to page 1 on filter change
+          page: 1, // Reset kembali ke halaman 1 saat filter rute berubah
         };
         syncToBrowserUrl(next, false);
         return next;
@@ -128,7 +128,7 @@ export function useUrlFilters() {
         const next: UrlFilters = {
           ...prev,
           tripIds: newTripIds,
-          page: 1, // Reset pagination to page 1 on filter change
+          page: 1, // Reset kembali ke halaman 1 saat filter trip berubah
         };
         syncToBrowserUrl(next, false);
         return next;
@@ -159,7 +159,7 @@ export function useUrlFilters() {
         const next: UrlFilters = {
           ...prev,
           pageSize: newPageSize,
-          page: 1, // Reset pagination to page 1 on page size change
+          page: 1, // Reset kembali ke halaman 1 saat ukuran halaman berubah
         };
         syncToBrowserUrl(next, false);
         return next;

@@ -1,10 +1,10 @@
 /**
- * MBTA V3 API TypeScript Type Definitions
- * Based on JSON:API specification and MBTA V3 Swagger documentation.
+ * Definisi Tipe TypeScript untuk MBTA V3 API
+ * Mengacu pada spesifikasi JSON:API dan dokumentasi Swagger MBTA V3.
  */
 
 // ---------------------------------------------------------------------------
-// Core JSON:API Types
+// Tipe Data Inti JSON:API
 // ---------------------------------------------------------------------------
 
 export interface MbtaResourceIdentifier<TType extends string = string> {
@@ -57,7 +57,7 @@ export interface MbtaResponse<TData, TIncluded = MbtaIncludedResource> {
 }
 
 // ---------------------------------------------------------------------------
-// Vehicle Types
+// Tipe Data Armada (Vehicle)
 // ---------------------------------------------------------------------------
 
 export type VehicleCurrentStatus =
@@ -99,15 +99,15 @@ export interface MbtaVehicleResource {
 }
 
 // ---------------------------------------------------------------------------
-// Route Types
+// Tipe Data Rute (Route)
 // ---------------------------------------------------------------------------
 
 export type MbtaRouteType =
-  | 0 // Light Rail (e.g. Green Line, Mattapan)
-  | 1 // Heavy Rail (Subway: Red, Orange, Blue)
-  | 2 // Commuter Rail
+  | 0 // Kereta Ringan / Trem (misal: Green Line, Mattapan)
+  | 1 // Kereta Berat / Subway (Red, Orange, Blue Line)
+  | 2 // Kereta Komuter (Commuter Rail)
   | 3 // Bus
-  | 4 // Ferry
+  | 4 // Kapal Feri (Ferry)
   | number;
 
 export interface MbtaRouteAttributes {
@@ -141,17 +141,17 @@ export interface MbtaRouteResource {
 }
 
 // ---------------------------------------------------------------------------
-// Trip Types
+// Tipe Data Perjalanan (Trip)
 // ---------------------------------------------------------------------------
 
 export interface MbtaTripAttributes {
-  bikes_allowed: number; // 0 = No info, 1 = Allowed, 2 = Not allowed
+  bikes_allowed: number; // 0 = Tanpa info, 1 = Diperbolehkan, 2 = Tidak diperbolehkan
   block_id: string;
   direction_id: 0 | 1;
   headsign: string;
   name: string;
   revenue: string;
-  wheelchair_accessible: number; // 0 = No info, 1 = Accessible, 2 = Inaccessible
+  wheelchair_accessible: number; // 0 = Tanpa info, 1 = Aksesibel, 2 = Tidak aksesibel
 }
 
 export interface MbtaTripRelationships {
@@ -173,7 +173,7 @@ export interface MbtaTripResource {
 }
 
 // ---------------------------------------------------------------------------
-// Stop Types
+// Tipe Data Halte / Stasiun (Stop)
 // ---------------------------------------------------------------------------
 
 export interface MbtaStopAttributes {
@@ -214,7 +214,7 @@ export interface MbtaStopResource {
 }
 
 // ---------------------------------------------------------------------------
-// Included Discriminated Union
+// Discriminated Union untuk Resource yang Disertakan (Included)
 // ---------------------------------------------------------------------------
 
 export type MbtaIncludedResource =
@@ -223,7 +223,7 @@ export type MbtaIncludedResource =
   | MbtaStopResource;
 
 // ---------------------------------------------------------------------------
-// Query Parameter Interfaces
+// Parameter Query API
 // ---------------------------------------------------------------------------
 
 export interface MbtaPaginationParams {

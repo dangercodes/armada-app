@@ -21,7 +21,7 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
   onResetFilters,
   isFetchingVehicles = false,
 }) => {
-  // Resolve resource metadata for selected items (names, colors, headsigns)
+  // Ambil metadata resource untuk item yang sedang dipilih (nama, warna, headsign)
   const { routesMap, tripsMap } = useSelectedResources({
     routeIds: selectedRouteIds,
     tripIds: selectedTripIds,
@@ -44,7 +44,7 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
       aria-label="Filter armada transportasi"
       className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs space-y-4"
     >
-      {/* 1. Header Toolbar Bar */}
+      {/* 1. Bar Toolbar Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800">
@@ -61,7 +61,7 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
           )}
         </div>
 
-        {/* Action Button: Reset Filters in Header */}
+        {/* Tombol Aksi: Reset Filter di Header */}
         <div className="flex items-center gap-2">
           {isFetchingVehicles && (
             <div className="flex items-center gap-1.5 text-xs text-[#1E6BD6] font-medium mr-2">
@@ -76,16 +76,16 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
         </div>
       </div>
 
-      {/* 2. Responsive 2-Column Selectors */}
+      {/* 2. Selektor Dropdown 2-Kolom Responsif */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-        {/* Route Dropdown Selector */}
+        {/* Dropdown Pemilih Rute */}
         <RouteSelect
           selectedRouteIds={selectedRouteIds}
           onChange={onRouteIdsChange}
           selectedRoutesMap={routesMap}
         />
 
-        {/* Trip Dropdown Selector */}
+        {/* Dropdown Pemilih Perjalanan */}
         <TripSelect
           selectedRouteIds={selectedRouteIds}
           selectedTripIds={selectedTripIds}
@@ -94,7 +94,7 @@ export const FilterToolbar: React.FC<FilterToolbarProps> = ({
         />
       </div>
 
-      {/* 3. Removable Chips Row */}
+      {/* 3. Baris Chip Filter Aktif */}
       <ActiveFilterChips
         selectedRouteIds={selectedRouteIds}
         selectedTripIds={selectedTripIds}

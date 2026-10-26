@@ -1,6 +1,6 @@
 # Transjakarta — Sistem Manajemen Armada (Fleet Management Dashboard)
 
-Aplikasi web dashboard pemantauan armada transportasi real-time berbasis **React 19**, **TypeScript**, **Tailwind CSS v4**, **TanStack Query v5**, dan **Leaflet**. Sistem ini mengintegrasikan data telemetri publik dari **MBTA V3 REST API** (JSON:API format) yang disajikan dengan identitas visual resmi bertema **Transjakarta** (*"Connecting the Life of Jakarta"*).
+Aplikasi web dashboard pemantauan armada transportasi real-time berbasis **React 19**, **TypeScript**, **Tailwind CSS v4**, dan **Leaflet**. Sistem ini mengintegrasikan data telemetri publik dari **MBTA V3 REST API** (JSON:API format) yang dikelola melalui arsitektur **Native Fetch Client** dan **Custom React Hooks** yang ringan, mandiri, serta disajikan dengan identitas visual resmi bertema **Transjakarta** (*"Connecting the Life of Jakarta"*).
 
 ---
 
@@ -54,7 +54,7 @@ Aplikasi **Sistem Manajemen Armada** dirancang untuk operator dashboard transpor
 | **Bahasa** | TypeScript | `~6.0.3` | Konfigurasi tipe ketat (*strict mode*), bebas tipe `any` |
 | **Build Tool** | Vite | `8.3.5` | Pembangunan cepat dengan Rolldown chunk splitting |
 | **Styling** | Tailwind CSS v4 | `4.3.3` | Menggunakan `@tailwindcss/vite` engine terbaru |
-| **Server State & Cache** | TanStack Query | `5.104.5` | Paginasi `keepPreviousData`, infinite scroll, caching 30 detik |
+| **State & Data Fetching** | Custom React Hooks | `React 19` | Pola reaktif (`useVehicles`, `useInfiniteRoutes`, `useInfiniteTrips`, `useSelectedResources`) dengan caching in-memory mandiri |
 | **Peta Interaktif** | Leaflet & React-Leaflet | `1.9.4` & `5.0.0` | OpenStreetMap TileLayer, custom SVG DivIcon |
 | **Komponen Dropdown** | react-select | `5.10.2` | Multi-select dengan virtualisasi scroll & kontrol keyboard |
 | **Manipulasi Waktu** | date-fns | `4.4.0` | Pemformat tanggal lokal Indonesia (`id`) & waktu relatif |
@@ -153,7 +153,7 @@ API MBTA tidak menyediakan kolom `meta.total` atau jumlah data keseluruhan secar
    - **Rumus Total Data:** $\text{totalRecords} = \text{offset}_{\text{last}} + \text{itemCount}_{\text{last}}$.
    - **Rumus Total Halaman:** $\text{totalPages} = \lceil \text{totalRecords} / \text{pageSize} \rceil$.
 3. **Pilihan Ukuran Halaman:** Pengguna dapat memilih `8, 12, 16, 20, 24, 32` data per halaman (kelipatan 4 untuk menjaga grid responsif 4 kolom selalu terisi penuh). Nilai default adalah `8`.
-4. **Pencegahan Kedipan (*Flicker-Free*):** Menggunakan `placeholderData: keepPreviousData` pada TanStack Query sehingga kartu armada halaman sebelumnya tetap ditampilkan dengan indikator halus saat data halaman baru diunduh.
+4. **Pencegahan Kedipan (*Flicker-Free Transition*):** Kartu armada halaman aktif tetap ditampilkan dengan indikator pembaruan halus saat data halaman baru sedang diunduh (`isFetching`), sehingga transisi halaman bebas dari getaran atau layar berkedip kosong.
 
 ---
 

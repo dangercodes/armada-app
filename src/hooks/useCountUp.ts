@@ -1,31 +1,30 @@
 import { useState, useEffect, useRef } from 'react';
 
 export interface UseCountUpOptions {
-  /** The final target number to count towards */
+  /** Nilai target akhir untuk animasi berhitung */
   value: number | null | undefined;
-  /** Whether data is currently loading / fetching from network */
+  /** Status apakah data sedang diambil dari jaringan */
   isLoading?: boolean;
-  /** Duration of the ease-out animation in milliseconds (default: 900ms) */
+  /** Durasi animasi transisi dalam milidetik (default: 900ms) */
   duration?: number;
-  /** Initial starting value on mount before any counting begins (default: 0) */
+  /** Nilai awal sebelum animasi dimulai (default: 0) */
   startValue?: number;
-  /** Maximum number to count towards while loading (simulated ticker) (default: 100) */
+  /** Nilai maksimum indikator ticker saat sedang memuat (default: 100) */
   loadingMax?: number;
-  /** Fallback string if value is null/undefined and not loading (default: '-') */
+  /** Teks fallback jika nilai bernilai null/undefined dan tidak sedang memuat (default: '-') */
   fallback?: string;
-  /** Optional custom formatter function (default: toLocaleString('id-ID')) */
+  /** Fungsi pemformat teks angka kustom (default: toLocaleString('id-ID')) */
   formatter?: (val: number) => string;
 }
 
 /**
- * Custom React hook for high-performance, smooth animated number counting.
+ * Custom React hook untuk animasi penambahan angka yang halus dan berkinerja tinggi.
  * 
- * Features:
- * 1. Active simulated counting ticker while `isLoading === true`.
- * 2. Ease-out cubic animation to the resolved `value` when data arrives.
- * 3. Smooth transition between value changes (e.g. filtering, pagination, refresh).
- * 4. Respects `prefers-reduced-motion` for accessibility.
- * 5. Uses `requestAnimationFrame` for stutter-free 60fps / 120fps rendering.
+ * Fitur:
+ * 1. Efek ticker hitung aktif saat data sedang dimuat (`isLoading === true`).
+ * 2. Transisi ease-out cubic yang mulus saat data selesai dimuat.
+ * 3. Menghormati pengaturan aksesibilitas sistem (`prefers-reduced-motion`).
+ * 4. Menggunakan `requestAnimationFrame` untuk render 60fps / 120fps tanpa patah-patah.
  */
 export function useCountUp({
   value,
@@ -47,13 +46,13 @@ export function useCountUp({
     window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
   useEffect(() => {
-    // If user prefers reduced motion, bypass all animations completely
+    // Jika pengguna mengaktifkan reduced-motion, matikan seluruh animasi
     if (isReducedMotion) {
       return;
     }
 
-    // --- CASE 1: Data is currently loading ---
-    // Run an active simulated counting animation so the user sees telemetry counting live
+    // --- KASUS 1: Data sedang dimuat (Loading) ---
+    // Jalankan animasi hitungan simulasi dinamis agar indikator metrik terasa hidup
     if (isLoading) {
       let active = true;
       const tickInterval = 45; // ms per tick
@@ -61,7 +60,7 @@ export function useCountUp({
       const intervalId = setInterval(() => {
         if (!active) return;
         const current = currentValueRef.current;
-        // Fast step when far, decelerating as it approaches loadingMax
+        // Langkah cepat di awal, melambat saat mendekati batas loadingMax
         const step = Math.max(1, Math.ceil((loadingMax - current) * 0.14));
         const next = current + step;
 
@@ -69,7 +68,7 @@ export function useCountUp({
           currentValueRef.current = next;
           setDisplayNumber(next);
         } else {
-          // Subtle breathing / live fluctuation when it reaches loadingMax
+          // Fluktuasi dinamis saat mencapai batas loadingMax
           const fluctuation =
             loadingMax +
             Math.floor(
@@ -86,7 +85,7 @@ export function useCountUp({
       };
     }
 
-    // --- CASE 2: Finished loading or not loading ---
+    // --- KASUS 2: Selesai memuat atau tidak sedang memuat ---
     if (typeof value !== 'number') {
       currentValueRef.current = 0;
       const rafId = requestAnimationFrame(() => {
@@ -95,11 +94,11 @@ export function useCountUp({
       return () => cancelAnimationFrame(rafId);
     }
 
-    // Ease-out animation to the target value
+    // Animasi ease-out menuju nilai target
     const startVal = currentValueRef.current;
     const targetVal = value;
 
-    // If already at target value, ensure state matches via RAF if needed
+    // Jika nilai saat ini sudah sama dengan target, langsung pasang tanpa animasi
     if (startVal === targetVal) {
       const rafId = requestAnimationFrame(() => {
         setDisplayNumber(targetVal);
@@ -110,7 +109,7 @@ export function useCountUp({
     let rafId: number;
     let startTime: number | null = null;
 
-    // Cubic ease-out: 1 - (1 - t)^3
+    // Rumus cubic ease-out: 1 - (1 - t)^3
     const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
 
     const animate = (currentTime: number) => {
@@ -138,7 +137,7 @@ export function useCountUp({
     };
   }, [value, isLoading, duration, loadingMax, isReducedMotion]);
 
-  // If user prefers reduced motion, directly derive the target value without animation
+  // Jika pengguna menyalakan prefers-reduced-motion, tampilkan nilai langsung tanpa animasi
   const effectiveNumber = isReducedMotion
     ? (isLoading ? null : (typeof value === 'number' ? value : null))
     : displayNumber;

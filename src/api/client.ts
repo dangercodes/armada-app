@@ -84,7 +84,7 @@ export async function mbtaFetch<T>(
     ...customHeaders,
   };
 
-  // Add API key only when configured in environment, adhering to MBTA Swagger spec
+  // Tambahkan API key hanya jika dikonfigurasi di environment (.env)
   const apiKey = import.meta.env.VITE_MBTA_API_KEY?.trim();
   if (apiKey) {
     headers['x-api-key'] = apiKey;
@@ -121,7 +121,7 @@ export async function mbtaFetch<T>(
         errorDetail = errorItems.map((e) => e.detail || e.title || e.code).filter(Boolean).join('; ');
       }
     } catch {
-      // Body may not be valid JSON
+      // Body respons mungkin bukan format JSON yang valid
     }
 
     let message: string;

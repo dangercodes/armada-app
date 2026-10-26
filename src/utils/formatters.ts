@@ -2,8 +2,8 @@ import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { id as indonesianLocale } from 'date-fns/locale';
 
 /**
- * Formats a coordinate pair into a human-readable latitude/longitude string.
- * Gracefully handles null/undefined values.
+ * Memformat pasangan koordinat menjadi teks garis lintang dan bujur yang mudah dibaca.
+ * Menangani nilai null/undefined secara aman.
  */
 export function formatCoordinates(
   lat: number | null | undefined,
@@ -26,8 +26,8 @@ export function formatCoordinates(
 }
 
 /**
- * Generates a clean comma-separated coordinates string for copying to clipboard.
- * Returns null if coordinates are unavailable.
+ * Menghasilkan teks koordinat bersih berpemisah koma untuk disalin ke clipboard.
+ * Mengembalikan null jika koordinat tidak tersedia.
  */
 export function getRawCoordinatesString(
   lat: number | null | undefined,
@@ -47,7 +47,7 @@ export function getRawCoordinatesString(
 }
 
 /**
- * Formats an ISO date string to a relative time format in Indonesian (e.g. "2 menit yang lalu").
+ * Memformat string tanggal ISO menjadi format waktu relatif dalam Bahasa Indonesia (contoh: "2 menit yang lalu").
  */
 export function formatRelativeTime(dateString?: string | null): string {
   if (!dateString) return 'Waktu tidak diketahui';
@@ -63,7 +63,7 @@ export function formatRelativeTime(dateString?: string | null): string {
 }
 
 /**
- * Formats an ISO date string to a full formatted timestamp for tooltips and accessibility.
+ * Memformat string tanggal ISO menjadi timestamp lengkap untuk tooltip dan aksesibilitas.
  */
 export function formatDateTime(dateString?: string | null): string {
   if (!dateString) return 'Waktu tidak tersedia';
@@ -78,7 +78,7 @@ export function formatDateTime(dateString?: string | null): string {
 }
 
 /**
- * Converts MBTA hex color strings (which usually omit the '#') to valid CSS hex colors.
+ * Mengonversi kode warna hex MBTA (yang sering kali tanpa tanda '#') menjadi kode warna CSS yang valid.
  */
 export function normalizeHexColor(
   color?: string | null,
@@ -93,7 +93,7 @@ export function normalizeHexColor(
 }
 
 /**
- * Formats raw vehicle status codes into friendly Indonesian strings.
+ * Mengubah kode status armada mentah menjadi teks deskriptif Bahasa Indonesia.
  */
 export function humanizeStatus(status?: string | null): string {
   if (!status) return 'Status Tidak Diketahui';
@@ -106,7 +106,7 @@ export function humanizeStatus(status?: string | null): string {
     case 'INCOMING_AT':
       return 'Mendekati Halte';
     default:
-      // Fallback: title case formatted status
+      // Cadangan: ubah format teks menjadi title case
       return status
         .toLowerCase()
         .split('_')
@@ -116,7 +116,7 @@ export function humanizeStatus(status?: string | null): string {
 }
 
 /**
- * Formats occupancy status into natural Indonesian strings.
+ * Mengubah status tingkat keterisian armada menjadi teks Bahasa Indonesia.
  */
 export function humanizeOccupancy(occupancy?: string | null): string | null {
   if (!occupancy) return null;
@@ -139,7 +139,7 @@ export function humanizeOccupancy(occupancy?: string | null): string | null {
 }
 
 /**
- * Converts a degree bearing (0-360) into standard Indonesian compass cardinal directions.
+ * Mengonversi sudut derajat (0-360) menjadi 8 arah mata angin standar Bahasa Indonesia.
  */
 export function getCompassDirection(bearing: number): string {
   const directions = [
@@ -158,7 +158,7 @@ export function getCompassDirection(bearing: number): string {
 }
 
 /**
- * Formats vehicle heading/bearing with degree and cardinal direction.
+ * Memformat arah hadap armada dengan satuan derajat beserta arah mata angin.
  */
 export function formatBearing(bearing: number | null | undefined): string {
   if (bearing === null || bearing === undefined || Number.isNaN(bearing)) {
@@ -168,7 +168,7 @@ export function formatBearing(bearing: number | null | undefined): string {
 }
 
 /**
- * Formats vehicle speed from m/s into km/h and m/s.
+ * Memformat kecepatan armada dari satuan m/s menjadi km/jam dan m/s.
  */
 export function formatSpeed(speed: number | null | undefined): string {
   if (speed === null || speed === undefined || Number.isNaN(speed)) {
@@ -179,7 +179,7 @@ export function formatSpeed(speed: number | null | undefined): string {
 }
 
 /**
- * Formats GTFS direction_id (0 = Outbound, 1 = Inbound).
+ * Memformat direction_id GTFS (0 = Outbound, 1 = Inbound).
  */
 export function formatDirection(directionId: 0 | 1 | null | undefined): string {
   if (directionId === 0) return 'Arah 0 (Outbound)';
@@ -188,7 +188,7 @@ export function formatDirection(directionId: 0 | 1 | null | undefined): string {
 }
 
 /**
- * Formats current stop sequence.
+ * Memformat nomor urutan perhentian/halte saat ini.
  */
 export function formatStopSequence(sequence: number | null | undefined): string {
   if (sequence === null || sequence === undefined || Number.isNaN(sequence)) {
@@ -198,7 +198,7 @@ export function formatStopSequence(sequence: number | null | undefined): string 
 }
 
 /**
- * Formats revenue status.
+ * Memformat status komersial/pendapatan armada.
  */
 export function formatRevenue(revenue: string | null | undefined): string {
   if (!revenue) return 'Tidak tersedia';

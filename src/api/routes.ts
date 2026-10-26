@@ -6,9 +6,8 @@ import type {
 } from '../types/mbta';
 
 /**
- * Fetches transit routes from MBTA /routes endpoint.
- *
- * Supports pagination, type filters, route IDs, and sorting.
+ * Mengambil daftar rute transportasi dari endpoint MBTA /routes.
+ * Mendukung paginasi, filter tipe, filter ID rute, dan pengurutan data.
  */
 export async function getRoutes(
   params: RouteQueryParams = {},
@@ -39,7 +38,7 @@ export async function getRoutes(
 }
 
 /**
- * Fetches a single route by ID.
+ * Mengambil data satu rute spesifik berdasarkan ID.
  */
 export async function getRouteById(
   id: string,

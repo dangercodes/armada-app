@@ -1,7 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { getRoutes } from '../api/routes';
 import { getTrips } from '../api/trips';
-import { mbtaKeys } from '../api/queryClient';
 import type { MbtaRouteResource, MbtaTripResource } from '../types/mbta';
 
 export interface UseSelectedResourcesOptions {
@@ -9,35 +8,77 @@ export interface UseSelectedResourcesOptions {
   tripIds: string[];
 }
 
+/**
+ * Custom Hook untuk memuat resource terpilih (routes & trips) agar label chip filter langsung tampil.
+ */
 export function useSelectedResources({ routeIds, tripIds }: UseSelectedResourcesOptions) {
-  const routesQuery = useQuery({
-    queryKey: mbtaKeys.routeList({ ids: routeIds }),
-    queryFn: ({ signal }) => getRoutes({ ids: routeIds }, signal),
-    enabled: routeIds.length > 0,
-    staleTime: 1000 * 60 * 10,
-  });
+  const [routesMap, setRoutesMap] = useState<Map<string, MbtaRouteResource>>(new Map());
+  const [tripsMap, setTripsMap] = useState<Map<string, MbtaTripResource>>(new Map());
+  const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
 
-  const tripsQuery = useQuery({
-    queryKey: mbtaKeys.tripList({ tripIds }),
-    queryFn: ({ signal }) => getTrips({ tripIds }, signal),
-    enabled: tripIds.length > 0,
-    staleTime: 1000 * 60 * 5,
-  });
+  const routeIdsKey = routeIds.join(',');
+  const tripIdsKey = tripIds.join(',');
 
-  const routesMap = new Map<string, MbtaRouteResource>();
-  for (const r of routesQuery.data?.data ?? []) {
-    routesMap.set(r.id, r);
-  }
+  useEffect(() => {
+    let isMounted = true;
+    async function loadResources() {
+      const activeRouteIds = routeIdsKey ? routeIdsKey.split(',') : [];
+      const activeTripIds = tripIdsKey ? tripIdsKey.split(',') : [];
 
-  const tripsMap = new Map<string, MbtaTripResource>();
-  for (const t of tripsQuery.data?.data ?? []) {
-    tripsMap.set(t.id, t);
-  }
+      if (activeRouteIds.length === 0 && activeTripIds.length === 0) {
+        if (isMounted) {
+          setRoutesMap(new Map());
+          setTripsMap(new Map());
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      setIsLoading(true);
+      setIsError(false);
+
+      try {
+        const routesPromise =
+          activeRouteIds.length > 0 ? getRoutes({ ids: activeRouteIds }) : Promise.resolve(null);
+        const tripsPromise =
+          activeTripIds.length > 0 ? getTrips({ tripIds: activeTripIds }) : Promise.resolve(null);
+        const [routesRes, tripsRes] = await Promise.all([routesPromise, tripsPromise]);
+
+        if (isMounted) {
+          if (routesRes?.data) {
+            const map = new Map<string, MbtaRouteResource>();
+            for (const r of routesRes.data) {
+              map.set(r.id, r);
+            }
+            setRoutesMap(map);
+          }
+          if (tripsRes?.data) {
+            const map = new Map<string, MbtaTripResource>();
+            for (const t of tripsRes.data) {
+              map.set(t.id, t);
+            }
+            setTripsMap(map);
+          }
+        }
+      } catch {
+        if (isMounted) setIsError(true);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    }
+
+    loadResources();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [routeIdsKey, tripIdsKey]);
 
   return {
     routesMap,
     tripsMap,
-    isLoading: (routeIds.length > 0 && routesQuery.isLoading) || (tripIds.length > 0 && tripsQuery.isLoading),
-    isError: routesQuery.isError || tripsQuery.isError,
+    isLoading,
+    isError,
   };
 }

@@ -9,12 +9,9 @@ export interface AnimatedCounterProps extends Omit<UseCountUpOptions, 'fallback'
 }
 
 /**
- * AnimatedCounter Component
+ * Komponen AnimatedCounter
  * 
- * Renders a smoothly counting number:
- * - Active counting ticker during `isLoading`.
- * - Cubic ease-out deceleration to target `value`.
- * - Tabular numbers to avoid horizontal layout shift.
+ * Menampilkan animasi angka yang bertambah secara halus:
  */
 export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
   value,
@@ -40,9 +37,8 @@ export const AnimatedCounter: React.FC<AnimatedCounterProps> = ({
 
   return (
     <span
-      className={`inline-flex items-baseline tabular-nums transition-opacity duration-300 ${
-        isCounting ? 'opacity-85 animate-pulse' : 'opacity-100'
-      } ${className}`}
+      className={`inline-flex items-baseline tabular-nums transition-opacity duration-300 ${isCounting ? 'opacity-85 animate-pulse' : 'opacity-100'
+        } ${className}`}
       aria-live="polite"
     >
       {prefix}

@@ -1,25 +1,60 @@
-import { useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useState } from 'react';
 import { getTrips } from '../api/trips';
-import { mbtaKeys } from '../api/queryClient';
-import type { TripQueryParams } from '../types/mbta';
+import type { MbtaResponse, MbtaTripResource, TripQueryParams } from '../types/mbta';
 
 export interface UseTripsOptions {
   enabled?: boolean;
 }
 
+/**
+ * Custom Hook untuk mengambil daftar perjalanan (trips) MBTA dari REST API.
+ */
 export function useTrips(
   params: TripQueryParams = {},
   options: UseTripsOptions = {},
 ) {
-  // MBTA requires at least one filter on /trips. By default, only enable if route or trip filter is supplied.
+  const [data, setData] = useState<MbtaResponse<MbtaTripResource[]> | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
+  // MBTA mewajibkan minimal satu filter untuk endpoint /trips
   const hasFilter = Boolean(
     (params.routeIds && params.routeIds.length > 0) ||
-      (params.tripIds && params.tripIds.length > 0),
+    (params.tripIds && params.tripIds.length > 0),
   );
+  const isEnabled = options.enabled !== undefined ? options.enabled : hasFilter;
+  const paramsKey = JSON.stringify(params);
 
-  return useQuery({
-    queryKey: mbtaKeys.tripList(params),
-    queryFn: ({ signal }) => getTrips(params, signal),
-    enabled: options.enabled !== undefined ? options.enabled : hasFilter,
-  });
+  const fetchTrips = useCallback(async () => {
+    if (!isEnabled) {
+      setData(null);
+      return;
+    }
+    setIsLoading(true);
+    setIsError(false);
+    setError(null);
+    try {
+      const parsedParams = paramsKey ? (JSON.parse(paramsKey) as TripQueryParams) : {};
+      const res = await getTrips(parsedParams);
+      setData(res);
+    } catch (err) {
+      setIsError(true);
+      setError(err instanceof Error ? err : new Error(String(err)));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [isEnabled, paramsKey]);
+
+  useEffect(() => {
+    fetchTrips();
+  }, [fetchTrips]);
+
+  return {
+    data,
+    isLoading,
+    isError,
+    error,
+    refetch: fetchTrips,
+  };
 }

@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import Select, {
   components,
   type MenuListProps,
@@ -8,7 +8,6 @@ import Select, {
   type StylesConfig,
   type GroupBase,
 } from 'react-select';
-import { useQuery } from '@tanstack/react-query';
 import { useInfiniteTrips } from '../hooks/useInfiniteTrips';
 import { getVehicles } from '../api/vehicles';
 import type { MbtaTripResource } from '../types/mbta';
@@ -70,7 +69,7 @@ const CustomMenuList = (props: MenuListProps<TripOption, true>) => {
   const listElRef = useRef<HTMLDivElement | null>(null);
   const scrollPosRef = useRef<number>(0);
 
-  // Preserve user's scroll position and container element on scroll events
+  // Menjaga posisi scroll pengguna saat event scroll berlangsung
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     listElRef.current = e.currentTarget;
     scrollPosRef.current = e.currentTarget.scrollTop;
@@ -79,7 +78,7 @@ const CustomMenuList = (props: MenuListProps<TripOption, true>) => {
     }
   };
 
-  // Restore scroll position before paint if an option update caused scrollTop to drop to 0
+  // Pulihkan posisi scroll sebelum proses render jika penambahan opsi mereset scrollTop ke 0
   useLayoutEffect(() => {
     const el = listElRef.current;
     if (el && scrollPosRef.current > 0 && el.scrollTop < scrollPosRef.current) {
@@ -117,7 +116,7 @@ const CustomMenuList = (props: MenuListProps<TripOption, true>) => {
   );
 };
 
-// Custom Option rendering with active status pill, headsign, direction, route badge, and wheelchair icon
+// Render opsi perjalanan kustom dengan pill status aktif, headsign, arah, dan rute
 const CustomOption = (props: OptionProps<TripOption, true, GroupBase<TripOption>>) => {
   const trip = props.data.trip;
   const headsign =
@@ -149,7 +148,7 @@ const CustomOption = (props: OptionProps<TripOption, true, GroupBase<TripOption>
                 {routeId}
               </span>
             )}
-            {/* Real-time active status badge */}
+            {/* Badge status operasional real-time */}
             {isActive ? (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -184,7 +183,7 @@ const CustomOption = (props: OptionProps<TripOption, true, GroupBase<TripOption>
   );
 };
 
-// Custom MultiValue label inside the input field
+// Label MultiValue kustom di dalam input field
 const CustomMultiValueLabel = (props: MultiValueGenericProps<TripOption, true, GroupBase<TripOption>>) => {
   const headsign = props.data.label;
   const routeId = props.data.routeId;
@@ -213,7 +212,7 @@ const CustomMultiValueLabel = (props: MultiValueGenericProps<TripOption, true, G
   );
 };
 
-// Custom MultiValue remove button
+// Tombol hapus MultiValue kustom
 const CustomMultiValueRemove = (props: MultiValueRemoveProps<TripOption, true>) => {
   return (
     <components.MultiValueRemove {...props}>
@@ -224,7 +223,7 @@ const CustomMultiValueRemove = (props: MultiValueRemoveProps<TripOption, true>) 
   );
 };
 
-// Stable components configuration passed to react-select
+// Konfigurasi komponen stabil untuk react-select
 const tripSelectComponents = {
   MenuList: CustomMenuList,
   Option: CustomOption,
@@ -295,39 +294,59 @@ export const TripSelect: React.FC<TripSelectProps> = ({
   const hasRouteSelected = selectedRouteIds.length > 0;
 
   // 1. Fetch live active trips on the selected routes (trips currently with active vehicles on the road)
-  const activeTripsQuery = useQuery({
-    queryKey: ['mbta', 'activeTripsForRoutes', selectedRouteIds],
-    queryFn: async ({ signal }) => {
-      if (selectedRouteIds.length === 0) return [];
-      const res = await getVehicles(
-        {
-          routeIds: selectedRouteIds,
+  const [activeTrips, setActiveTrips] = useState<MbtaTripResource[]>([]);
+  const [isActiveTripsLoading, setIsActiveTripsLoading] = useState(false);
+
+  const selectedRouteIdsKey = selectedRouteIds.join(',');
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!hasRouteSelected || !selectedRouteIdsKey) {
+      setActiveTrips([]);
+      setIsActiveTripsLoading(false);
+      return;
+    }
+
+    async function loadActiveTrips() {
+      setIsActiveTripsLoading(true);
+      try {
+        const activeRouteIds = selectedRouteIdsKey ? selectedRouteIdsKey.split(',') : undefined;
+        const res = await getVehicles({
+          routeIds: activeRouteIds,
           include: ['trip'],
           limit: 100,
-        },
-        signal,
-      );
-      const list: MbtaTripResource[] = [];
-      const seen = new Set<string>();
-      for (const inc of res.included ?? []) {
-        if (inc.type === 'trip' && !seen.has(inc.id)) {
-          seen.add(inc.id);
-          list.push(inc as MbtaTripResource);
+        });
+        if (!isMounted) return;
+        const list: MbtaTripResource[] = [];
+        const seen = new Set<string>();
+        for (const inc of res.included ?? []) {
+          if (inc.type === 'trip' && !seen.has(inc.id)) {
+            seen.add(inc.id);
+            list.push(inc as MbtaTripResource);
+          }
         }
+        setActiveTrips(list);
+      } catch {
+        // Abaikan error pada pinning trips aktif
+      } finally {
+        if (isMounted) setIsActiveTripsLoading(false);
       }
-      return list;
-    },
-    enabled: hasRouteSelected,
-    staleTime: 1000 * 30, // 30s cache
-  });
+    }
+
+    loadActiveTrips();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [hasRouteSelected, selectedRouteIdsKey]);
 
   const activeTripIdsSet = useMemo(() => {
     const set = new Set<string>();
-    for (const t of activeTripsQuery.data ?? []) {
+    for (const t of activeTrips) {
       set.add(t.id);
     }
     return set;
-  }, [activeTripsQuery.data]);
+  }, [activeTrips]);
 
   // 2. Fetch paginated schedule trips via infinite scrolling
   const {
@@ -345,7 +364,7 @@ export const TripSelect: React.FC<TripSelectProps> = ({
     enabled: hasRouteSelected,
   });
 
-  // Map of all known trip resources (from selected map, active trips, and loaded pages)
+  // Peta (Map) seluruh data perjalanan (dari trip terpilih, trip aktif di jalan, dan halaman yang dimuat)
   const tripsMap = useMemo(() => {
     const map = new Map<string, MbtaTripResource>();
     if (selectedTripsMap) {
@@ -353,8 +372,8 @@ export const TripSelect: React.FC<TripSelectProps> = ({
         map.set(id, trip);
       });
     }
-    if (activeTripsQuery.data) {
-      for (const trip of activeTripsQuery.data) {
+    if (activeTrips) {
+      for (const trip of activeTrips) {
         map.set(trip.id, trip);
       }
     }
@@ -366,9 +385,9 @@ export const TripSelect: React.FC<TripSelectProps> = ({
       }
     }
     return map;
-  }, [selectedTripsMap, activeTripsQuery.data, data]);
+  }, [selectedTripsMap, activeTrips, data]);
 
-  // Flatten and store all pages into TripOption array with stable object caching
+  // Ratakan dan simpan seluruh halaman ke dalam array TripOption dengan cache objek yang stabil
   const loadedOptions = useMemo(() => {
     const list: TripOption[] = [];
     if (data?.pages) {
@@ -382,11 +401,11 @@ export const TripSelect: React.FC<TripSelectProps> = ({
     return list;
   }, [data, activeTripIdsSet]);
 
-  // Merge options: Selected trips first, then currently ACTIVE trips, then all scheduled trips
+  // Gabungkan opsi: Trip terpilih di paling atas, disusul trip yang sedang AKTIF, lalu seluruh jadwal trip
   const options = useMemo(() => {
     const map = new Map<string, TripOption>();
 
-    // 1. Always include selected trips first
+    // 1. Selalu sertakan perjalanan yang sedang dipilih di urutan pertama
     for (const id of selectedTripIds) {
       const trip = tripsMap.get(id);
       const isActive = activeTripIdsSet.has(id);
@@ -402,16 +421,16 @@ export const TripSelect: React.FC<TripSelectProps> = ({
       }
     }
 
-    // 2. Pinned Active Trips (trips that actually have vehicles on the road right now!)
-    if (activeTripsQuery.data) {
-      for (const trip of activeTripsQuery.data) {
+    // 2. Sematkan perjalanan aktif (perjalanan yang saat ini benar-benar ada armadanya di jalan)
+    if (activeTrips) {
+      for (const trip of activeTrips) {
         if (!map.has(trip.id)) {
           map.set(trip.id, getOrCreateTripOption(trip, true));
         }
       }
     }
 
-    // 3. Add all loaded schedule options from /trips
+    // 3. Tambahkan semua opsi perjalanan terjadwal dari endpoint /trips
     for (const opt of loadedOptions) {
       if (!map.has(opt.value)) {
         map.set(opt.value, opt);
@@ -419,9 +438,9 @@ export const TripSelect: React.FC<TripSelectProps> = ({
     }
 
     return Array.from(map.values());
-  }, [selectedTripIds, tripsMap, activeTripsQuery.data, activeTripIdsSet, loadedOptions]);
+  }, [selectedTripIds, tripsMap, activeTrips, activeTripIdsSet, loadedOptions]);
 
-  // Construct current value array for react-select
+  // Bentuk array nilai terpilih saat ini untuk react-select
   const selectValue = useMemo(() => {
     return selectedTripIds.map((id) => {
       const found = options.find((opt) => opt.value === id);
@@ -439,7 +458,7 @@ export const TripSelect: React.FC<TripSelectProps> = ({
     });
   }, [selectedTripIds, options, tripsMap, activeTripIdsSet]);
 
-  // Custom filter function for searching trips by headsign, name, trip ID, or route
+  // Fungsi filter pencarian perjalanan berdasarkan headsign, nama, ID trip, atau rute
   const filterTripOption = (
     candidate: { label: string; value: string; data: TripOption },
     input: string,
@@ -454,7 +473,7 @@ export const TripSelect: React.FC<TripSelectProps> = ({
     return headsign.includes(query) || name.includes(query) || id.includes(query) || routeId.includes(query);
   };
 
-  const activeTripCount = activeTripsQuery.data?.length ?? 0;
+  const activeTripCount = activeTrips.length;
 
   return (
     <div className="flex flex-col gap-1 w-full">
@@ -501,7 +520,7 @@ export const TripSelect: React.FC<TripSelectProps> = ({
           isMulti
           isSearchable
           isDisabled={disabled || !hasRouteSelected}
-          isLoading={isLoading || activeTripsQuery.isLoading}
+          isLoading={isLoading || isActiveTripsLoading}
           options={options}
           value={selectValue}
           filterOption={filterTripOption}

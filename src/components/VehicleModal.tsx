@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
   MbtaRouteResource,
   MbtaStopResource,
@@ -49,7 +48,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
   const modalRef = useRef<HTMLDivElement>(null);
   const closeBtnRef = useRef<HTMLButtonElement>(null);
 
-  // Sync skeleton state when modal opens or target vehicle changes
+  // Sinkronkan state skeleton saat modal dibuka atau armada yang dituju berganti
   const currentVehicleId = isOpen ? (vehicle?.id ?? null) : null;
   if (currentVehicleId !== prevVehicleId) {
     setPrevVehicleId(currentVehicleId);
@@ -61,7 +60,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
     }
   }
 
-  // Dismiss skeleton animation after 500ms
+  // Tutup animasi skeleton setelah 500ms
   useEffect(() => {
     if (isOpen && isOpeningSkeleton) {
       const timer = setTimeout(() => {
@@ -71,7 +70,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
     }
   }, [isOpen, isOpeningSkeleton]);
 
-  // Determine if missing relationship data requires fetching /vehicles/{id}?include=route,trip,stop
+  // Periksa apakah ada relasi yang hilang sehingga perlu fetch /vehicles/{id}?include=route,trip,stop
   const routeId = vehicle?.relationships.route?.data?.id;
   const tripId = vehicle?.relationships.trip?.data?.id;
   const stopId = vehicle?.relationships.stop?.data?.id;
@@ -84,29 +83,49 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
 
   const shouldFetchDetails = Boolean(isOpen && vehicle && hasMissingRelationships);
 
-  const detailQuery = useQuery({
-    queryKey: ['mbta', 'vehicleDetail', vehicle?.id],
-    queryFn: ({ signal }) =>
-      getVehicleById(vehicle!.id, ['route', 'trip', 'stop'], signal),
-    enabled: shouldFetchDetails,
-    staleTime: 1000 * 30, // 30s cache
-  });
+  const [detailData, setDetailData] = useState<import('../types/mbta').MbtaResponse<MbtaVehicleResource> | null>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [isDetailError, setIsDetailError] = useState(false);
 
-  // Handler for manual refresh button: triggers live API refetch and shows skeleton animation
+  const vehicleId = vehicle?.id;
+
+  const fetchDetail = useCallback(async () => {
+    if (!vehicleId) return;
+    setIsDetailLoading(true);
+    setIsDetailError(false);
+    try {
+      const res = await getVehicleById(vehicleId, ['route', 'trip', 'stop']);
+      setDetailData(res);
+    } catch {
+      setIsDetailError(true);
+    } finally {
+      setIsDetailLoading(false);
+    }
+  }, [vehicleId]);
+
+  useEffect(() => {
+    if (shouldFetchDetails) {
+      fetchDetail();
+    } else {
+      setDetailData(null);
+    }
+  }, [shouldFetchDetails, fetchDetail]);
+
+  // Handler tombol refresh manual: memicu refetch API secara live dan menampilkan skeleton
   const handleManualRefresh = async () => {
     setIsRefreshingSkeleton(true);
     const minDelay = new Promise((resolve) => setTimeout(resolve, 500));
     try {
-      await Promise.all([detailQuery.refetch(), minDelay]);
+      await Promise.all([fetchDetail(), minDelay]);
     } finally {
       setIsRefreshingSkeleton(false);
     }
   };
 
-  // Resolve included relationships: use fetched detail if available, otherwise initial props
+  // Resolusi data relasi: gunakan data hasil fetch jika ada, fallback ke initial props
   const { resolvedRoute, resolvedTrip, resolvedStop } = useMemo(() => {
-    if (detailQuery.data) {
-      const lookup = createIncludedLookup(detailQuery.data.included);
+    if (detailData) {
+      const lookup = createIncludedLookup(detailData.included);
       return {
         resolvedRoute: (routeId ? lookup.routes.get(routeId) : undefined) || initialRoute,
         resolvedTrip: (tripId ? lookup.trips.get(tripId) : undefined) || initialTrip,
@@ -118,28 +137,28 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
       resolvedTrip: initialTrip,
       resolvedStop: initialStop,
     };
-  }, [detailQuery.data, routeId, tripId, stopId, initialRoute, initialTrip, initialStop]);
+  }, [detailData, routeId, tripId, stopId, initialRoute, initialTrip, initialStop]);
 
-  // Merge latest vehicle attributes if fetched detail is fresher
-  const effectiveVehicle = detailQuery.data?.data || vehicle;
+  // Gunakan data armada terbaru jika hasil detail lebih mutakhir
+  const effectiveVehicle = detailData?.data || vehicle;
 
-  // Accessible Focus Management & Body Scroll Lock
+  // Manajemen Aksesibilitas Fokus & Kunci Scroll Halaman
   useEffect(() => {
     if (!isOpen) return;
 
-    // Capture previously focused element to restore focus upon close
+    // Rekam elemen yang sebelumnya aktif agar fokus bisa dikembalikan saat modal ditutup
     const previousActiveElement = document.activeElement as HTMLElement | null;
 
-    // Lock body scrolling
+    // Kunci scroll halaman belakang
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
-    // Set initial focus to close button after modal mounts
+    // Berikan fokus awal ke tombol tutup setelah modal tampil
     const focusTimer = setTimeout(() => {
       closeBtnRef.current?.focus();
     }, 50);
 
-    // Keyboard handlers: Escape to close and Tab focus trap
+    // Event handler keyboard: Escape untuk menutup dan Tab focus trap
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -176,7 +195,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
       clearTimeout(focusTimer);
       document.body.style.overflow = originalOverflow;
       window.removeEventListener('keydown', handleKeyDown);
-      // Restore focus asynchronously so it doesn't process leftover mouse/keyboard events from closing
+      // Kembalikan fokus secara asynchronous agar tidak memproses sisa event mouse/keyboard
       requestAnimationFrame(() => {
         previousActiveElement?.focus?.();
       });
@@ -223,7 +242,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Ignore copy error
+      // Abaikan error saat menyalin ke clipboard
     }
   };
 
@@ -233,17 +252,17 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
   const stopSeqDisplay = formatStopSequence(attributes.current_stop_sequence);
   const revenueDisplay = formatRevenue(attributes.revenue);
 
-  // Stop Details
+  // Rincian Halte
   const stopName = resolvedStop?.attributes.name || 'Tidak tersedia';
   const stopDescription = resolvedStop?.attributes.description;
   const stopPlatform = resolvedStop?.attributes.platform_name;
   const stopMunicipality = resolvedStop?.attributes.municipality;
 
-  // Carriages list if present
+  // Daftar gerbong (carriages) jika tersedia dari API
   const carriages = Array.isArray(attributes.carriages) ? attributes.carriages : null;
 
-  // Show loading skeleton on open timeout (500ms), during manual refresh, or when initial details are loading
-  const showSkeleton = isOpeningSkeleton || isRefreshingSkeleton || detailQuery.isLoading;
+  // Tampilkan loading skeleton selama delay awal (500ms), refresh manual, atau fetch detail berlangsung
+  const showSkeleton = isOpeningSkeleton || isRefreshingSkeleton || isDetailLoading;
 
   return (
     <div
@@ -260,7 +279,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
         }
       }}
     >
-      {/* 1. Backdrop overlay */}
+      {/* 1. Lapisan latar belakang (Backdrop overlay) */}
       <div
         className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity motion-safe:animate-fadeIn"
         onClick={(e) => {
@@ -271,16 +290,16 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
         aria-hidden="true"
       />
 
-      {/* 2. Modal Dialog Window */}
+      {/* 2. Jendela Dialog Modal */}
       <div
         ref={modalRef}
         onClick={(e) => e.stopPropagation()}
         className="relative bg-white rounded-3xl shadow-2xl border border-slate-200/90 w-full max-w-5xl overflow-hidden flex flex-col max-h-[92vh] motion-safe:animate-scaleUp z-10"
       >
-        {/* Top Header Strip with Route Accent Color */}
+        {/* Strip Header Atas dengan Warna Aksen Rute */}
         <div className="h-2 w-full" style={{ backgroundColor: routeColor }} />
 
-        {/* Modal Header */}
+        {/* Header Modal */}
         <header className="px-6 py-4.5 border-b border-slate-100 flex items-center justify-between gap-4 bg-slate-50/60 shrink-0">
           <div className="flex items-center gap-3 min-w-0">
             <div
@@ -345,7 +364,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
           </div>
         </header>
 
-        {detailQuery.isError && (
+        {isDetailError && (
           <div className="bg-rose-50 px-6 py-2 border-b border-rose-100 flex items-center justify-between text-xs text-rose-800">
             <span>Gagal memperbarui rincian relasi. Menampilkan data yang tersedia.</span>
             <button
@@ -358,12 +377,12 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
           </div>
         )}
 
-        {/* Modal Scrollable Body: If loading or refreshing, display animated Skeleton */}
+        {/* Konten Dialog Modal: Jika sedang memuat data, tampilkan Skeleton beranimasi */}
         {showSkeleton ? (
           <VehicleModalSkeleton />
         ) : (
           <div className="p-6 overflow-y-auto flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* LEFT COLUMN: Complete Vehicle Information (7 Columns on desktop) */}
+            {/* KOLOM KIRI: Informasi Lengkap Armada (7 Kolom pada Desktop) */}
             <div className="lg:col-span-7 space-y-5">
               {/* 1. Kartu Posisi GPS & Waktu */}
               <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/80 space-y-3">
@@ -569,7 +588,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
               )}
             </div>
 
-            {/* RIGHT COLUMN: Leaflet Interactive Map (5 Columns on desktop) */}
+            {/* KOLOM KANAN: Peta Interaktif Leaflet (5 Kolom pada Desktop) */}
             <div className="lg:col-span-5 flex flex-col min-h-[340px] lg:min-h-full">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
@@ -607,7 +626,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
           </div>
         )}
 
-        {/* Modal Footer */}
+        {/* Footer Modal */}
         <footer className="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3 text-xs text-slate-500 shrink-0">
           <button
             type="button"

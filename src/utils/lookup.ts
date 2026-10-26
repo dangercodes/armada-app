@@ -12,7 +12,7 @@ export interface IncludedLookup {
 }
 
 /**
- * Indexes the JSON:API `included` resources by type and ID for O(1) relation lookups.
+ * Mengindeks data relasi `included` JSON:API berdasarkan tipe dan ID untuk lookup cepat O(1).
  */
 export function createIncludedLookup(
   included?: MbtaIncludedResource[] | null,

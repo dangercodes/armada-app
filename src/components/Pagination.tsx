@@ -2,29 +2,29 @@ import React from 'react';
 import { formatDataRange, generatePageNumbers } from '../utils/pagination';
 
 export interface PaginationProps {
-  /** The current active page number (1-indexed) */
+  /** Nomor halaman yang sedang aktif (dimulai dari indeks 1) */
   currentPage: number;
-  /** Total calculated pages, or null if cannot be determined */
+  /** Total halaman hasil kalkulasi, atau null jika belum dapat ditentukan */
   totalPages: number | null;
-  /** Number of items per page (8, 12, 24, 48) */
+  /** Jumlah data yang ditampilkan per halaman (contoh: 8, 12, 16, 20, 24, 32) */
   pageSize: number;
-  /** Total records across the entire dataset, or null if unknown */
+  /** Total seluruh data armada dalam jaringan, atau null jika belum diketahui */
   totalRecords: number | null;
-  /** Number of items currently loaded on the current page */
+  /** Jumlah item data yang saat ini dimuat pada halaman aktif */
   currentCount: number;
-  /** List of supported page size options */
+  /** Daftar opsi ukuran halaman yang didukung */
   pageSizeOptions?: number[];
-  /** Whether a background query or page transition is active */
+  /** Status apakah query latar belakang atau transisi halaman sedang aktif */
   isFetching?: boolean;
-  /** Whether the total count is being computed in the background */
+  /** Status apakah kalkulasi total data sedang berlangsung di latar belakang */
   isTotalLoading?: boolean;
-  /** Whether there is a next page available */
+  /** Status apakah terdapat halaman berikutnya */
   hasNextPage?: boolean;
-  /** Callback fired when page number changes */
+  /** Fungsi callback saat pengguna berpindah nomor halaman */
   onPageChange: (newPage: number) => void;
-  /** Callback fired when page size changes (should reset to page 1) */
+  /** Fungsi callback saat pengguna mengubah ukuran halaman (mereset ke halaman 1) */
   onPageSizeChange: (newPageSize: number) => void;
-  /** Additional CSS class names */
+  /** Kelas CSS tambahan opsional */
   className?: string;
 }
 
@@ -45,13 +45,13 @@ export const Pagination: React.FC<PaginationProps> = ({
   const currentOffset = Math.max(0, (currentPage - 1) * pageSize);
   const dataRangeText = formatDataRange(currentOffset, currentCount, totalRecords);
 
-  // Determine boundary states for navigation buttons
+  // Tentukan status batas tombol navigasi (halaman pertama / terakhir)
   const isFirstPage = currentPage <= 1;
   const isLastPage =
     totalPages !== null ? currentPage >= totalPages : !hasNextPage;
   const isNavDisabled = currentCount === 0 && (totalRecords === 0 || totalRecords === null);
 
-  // Generate compact page layout (max 7 items with ellipsis)
+  // Buat tata letak tombol halaman ringkas (maksimal 7 item dengan ellipsis)
   const effectiveTotalPages = totalPages ?? (hasNextPage ? currentPage + 1 : currentPage);
   const pageItems = generatePageNumbers(currentPage, effectiveTotalPages);
 
@@ -64,7 +64,7 @@ export const Pagination: React.FC<PaginationProps> = ({
       className={`bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs flex flex-col lg:flex-row items-center justify-between gap-4 transition-all duration-200 ${className}`}
       aria-label="Kontrol navigasi halaman"
     >
-      {/* 1. Page Range & Total Records Info (Always visible on mobile) */}
+      {/* 1. Informasi Rentang Halaman & Total Data */}
       <div className="flex flex-wrap items-center justify-between sm:justify-start gap-2.5 w-full lg:w-auto">
         <span
           className="text-xs sm:text-sm font-semibold text-slate-800 tracking-tight"
@@ -73,7 +73,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           {dataRangeText}
         </span>
 
-        {/* Total Pages Badge / Status */}
+        {/* Badge / Status Total Halaman */}
         {totalPages !== null && totalPages > 0 ? (
           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200/80">
             Halaman {currentPage} dari {totalPages}
@@ -86,9 +86,9 @@ export const Pagination: React.FC<PaginationProps> = ({
         ) : null}
       </div>
 
-      {/* 2. Controls & Navigation Group */}
+      {/* 2. Grup Kontrol Navigasi & Pemilihan Ukuran Halaman */}
       <div className="flex flex-col sm:flex-row items-center justify-between sm:justify-end gap-3 sm:gap-4 w-full lg:w-auto">
-        {/* Page Size Selector */}
+        {/* Pemilih Ukuran Halaman */}
         <div className="flex items-center gap-2 text-xs text-slate-600 w-full sm:w-auto justify-between sm:justify-start">
           <label htmlFor="pagination-page-size" className="font-medium shrink-0">
             Tampilkan:
@@ -120,13 +120,13 @@ export const Pagination: React.FC<PaginationProps> = ({
           </div>
         </div>
 
-        {/* 3. Accessible Pagination Buttons */}
+        {/* 3. Tombol Navigasi Halaman Beraksesibilitas */}
         <nav
           aria-label="Navigasi halaman armada"
           role="navigation"
           className="flex items-center gap-1 sm:gap-1.5 w-full sm:w-auto justify-center overflow-x-auto py-0.5"
         >
-          {/* Previous Page Button */}
+          {/* Tombol Halaman Sebelumnya */}
           <button
             type="button"
             aria-label="Ke halaman sebelumnya"
@@ -150,7 +150,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             <span className="hidden sm:inline">Sebelumnya</span>
           </button>
 
-          {/* Compact Page Number Buttons */}
+          {/* Tombol Nomor Halaman */}
           <div className="flex items-center gap-1">
             {pageItems.map((item, index) => {
               if (item === '...') {
@@ -191,7 +191,7 @@ export const Pagination: React.FC<PaginationProps> = ({
             })}
           </div>
 
-          {/* Next Page Button */}
+          {/* Tombol Halaman Berikutnya */}
           <button
             type="button"
             aria-label="Ke halaman berikutnya"

@@ -15,7 +15,7 @@ import {
   normalizeHexColor,
 } from '../utils/formatters';
 
-// Fix Leaflet default icon asset resolution in Vite bundler
+// Perbaikan resolusi aset ikon default Leaflet pada bundler Vite
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl,
@@ -44,12 +44,12 @@ function createVehicleMarkerIcon(
 
   const html = `
     <div style="position: relative; width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;">
-      <!-- Ambient pulsing aura in route color -->
+      <!-- Efek aura berdenyut sesuai warna rute -->
       <div style="position: absolute; inset: 4px; border-radius: 50%; background-color: ${routeColor}; opacity: 0.28; animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
       
       ${hasBearing
       ? `
-        <!-- Directional heading pointer orbiting in bearing angle -->
+        <!-- Penunjuk arah hadap kendaraan sesuai sudut bearing -->
         <div style="position: absolute; inset: 0; transform: rotate(${rotation}deg); transform-origin: center center; pointer-events: none; z-index: 5;">
           <div style="position: absolute; top: 0px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 8px solid ${routeColor}; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.3));"></div>
         </div>
@@ -57,7 +57,7 @@ function createVehicleMarkerIcon(
       : ''
     }
 
-      <!-- Center bus marker badge -->
+      <!-- Badge ikon bus di bagian tengah marker -->
       <div style="position: relative; z-index: 10; width: 36px; height: 36px; border-radius: 50%; background-color: #ffffff; border: 2.5px solid ${routeColor}; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25); display: flex; align-items: center; justify-content: center;">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="${routeColor}" style="filter: drop-shadow(0 1px 1px rgba(0,0,0,0.12));">
           <path d="M4 16c0 .88.39 1.67 1 2.22V20c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h8v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1.78c.61-.55 1-1.34 1-2.22V6c0-3.5-3.58-4-8-4s-8 .5-8 4v10zm3.5 1c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm9 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6H6V6h12v5z"/>
@@ -76,14 +76,14 @@ function createVehicleMarkerIcon(
 }
 
 /**
- * Helper to dynamically re-center and resize Leaflet map tiles when coordinates change or modal animates in.
+ * Komponen pembantu untuk memusatkan kembali dan me-refresh ukuran peta Leaflet saat koordinat berubah atau modal terbuka.
  */
 function MapController({ center, zoom = 15 }: { center: [number, number]; zoom?: number }) {
   const map = useMap();
 
   useEffect(() => {
     map.setView(center, zoom, { animate: true });
-    // Invalidate map size after a slight delay to ensure container transition has finished
+    // Invalidate ukuran peta setelah jeda singkat agar transisi animasi modal selesai sempurna
     const timer = setTimeout(() => {
       map.invalidateSize();
     }, 250);
@@ -104,7 +104,7 @@ export const VehicleMap: React.FC<VehicleMapProps> = ({
   updatedAt,
   className = '',
 }) => {
-  // Validate coordinates
+  // Validasi nilai koordinat
   const isValidCoord =
     typeof latitude === 'number' &&
     typeof longitude === 'number' &&
@@ -120,7 +120,7 @@ export const VehicleMap: React.FC<VehicleMapProps> = ({
     return createVehicleMarkerIcon(bearing, hexColor);
   }, [bearing, hexColor]);
 
-  // Graceful fallback for missing or invalid coordinates
+  // Tampilan alternatif aman jika koordinat armada tidak tersedia
   if (!isValidCoord) {
     return (
       <div
@@ -219,7 +219,7 @@ export const VehicleMap: React.FC<VehicleMapProps> = ({
         <MapController center={position} zoom={15} />
       </MapContainer>
 
-      {/* Floating GPS Coordinates Pill Badge on Map */}
+      {/* Badge Mengambang Koordinat GPS di Atas Peta */}
       <div className="absolute top-3 left-3 z-[400] bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-xs flex items-center gap-2 text-xs">
         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
         <span className="font-mono text-[11px] font-medium text-slate-700">

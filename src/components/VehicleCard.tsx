@@ -41,7 +41,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
     relationships.route?.data?.id ||
     'Rute Belum Ditugaskan';
 
-  // Limit length of route badge to prevent overflowing the card and status badge
+  // Batasi panjang badge rute agar tidak bertabrakan dengan badge status armada
   const MAX_ROUTE_BADGE_LENGTH = 11;
   const isRouteTruncated = routeIdentifier.length > MAX_ROUTE_BADGE_LENGTH;
   const displayRouteIdentifier = isRouteTruncated
@@ -78,7 +78,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fail silently if copy permission is denied
+      // Abaikan error jika browser memblokir izin akses clipboard
     }
   };
 
@@ -98,19 +98,19 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
       onKeyDown={handleKeyDown}
       className="group relative bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md hover:border-slate-300/80 hover:z-20 transition-all duration-200 flex flex-col justify-between cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E6BD6] focus-visible:ring-offset-2 motion-safe:hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]"
     >
-      {/* Route Color Accent Strip */}
+      {/* Garis aksen warna rute pada tepi kiri kartu */}
       <div
         className="absolute top-0 left-0 bottom-0 w-1.5 rounded-l-2xl transition-colors"
         style={{ backgroundColor: routeColor }}
         aria-hidden="true"
       />
 
-      {/* Card Content Container */}
+      {/* Kontainer isi kartu */}
       <div className="p-5 pl-6 flex-1 flex flex-col justify-between gap-4">
-        {/* Top Header: Route Chip & Status Badge */}
+        {/* Bagian Header: Chip Rute & Badge Status */}
         <div>
           <div className="flex items-center justify-between gap-2 mb-2 min-w-0">
-            {/* Route Badge with Hover Tooltip */}
+            {/* Badge Rute dengan Tooltip saat Hover */}
             <div className="relative group/route min-w-0 flex-shrink">
               <span
                 className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold tracking-wide truncate max-w-[110px] sm:max-w-[125px] shadow-2xs cursor-help select-none"
@@ -123,12 +123,12 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
                 {displayRouteIdentifier}
               </span>
 
-              {/* Floating Tooltip (Appears when route badge is hovered) */}
+              {/* Tooltip Mengambang (Muncul saat kursor mengarah ke badge rute) */}
               <div
                 role="tooltip"
                 className="pointer-events-none absolute left-0 top-full mt-1.5 z-40 hidden group-hover/route:flex flex-col items-start bg-slate-900/95 text-white text-[11px] leading-tight py-1.5 px-2.5 rounded-lg shadow-xl border border-slate-700/80 backdrop-blur-xs whitespace-nowrap motion-safe:animate-fadeIn"
               >
-                {/* Arrow pointing up */}
+                {/* Segitiga panah tooltip mengarah ke atas */}
                 <div className="absolute left-3 bottom-full w-0 h-0 border-x-4 border-x-transparent border-b-4 border-b-slate-900/95" />
                 <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">
                   Rute Lengkap
@@ -139,11 +139,11 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
               </div>
             </div>
 
-            {/* Status Badge */}
+            {/* Badge Status Armada */}
             <StatusBadge status={attributes.current_status} size="sm" className="shrink-0" />
           </div>
 
-          {/* Vehicle Label */}
+          {/* Label / Nama Armada */}
           <div className="mt-2">
             <div className="flex items-baseline justify-between gap-2">
               <h3 className="text-lg font-bold text-slate-900 group-hover:text-[#0B3C8C] transition-colors tracking-tight">
@@ -157,7 +157,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
               </span>
             </div>
 
-            {/* Trip Headsign / Destination (Dedicated line with full card width) */}
+            {/* Tujuan Perjalanan (Trip Headsign) */}
             {tripHeadsign && (
               <div className="flex items-center gap-1.5 text-xs text-slate-600 mt-1">
                 <span className="text-[11px] text-slate-400 font-medium shrink-0">Tujuan:</span>
@@ -167,7 +167,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
               </div>
             )}
 
-            {/* Route Long Name / Corridor (Line clamp 2 for smooth multi-line wrapping) */}
+            {/* Nama Lengkap Koridor Rute (Maksimal 2 baris) */}
             {route?.attributes.long_name && (
               <p
                 className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed"
@@ -179,7 +179,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
           </div>
         </div>
 
-        {/* Operational Metrics Sub-bar (Speed / Bearing) */}
+        {/* Bar Indikator Operasional (Kecepatan / Sudut Hadap / Keterisian) */}
         {(attributes.speed !== null || attributes.bearing !== null || occupancyText) && (
           <div className="flex flex-wrap items-center gap-2.5 text-[11px] text-slate-500 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100">
             {attributes.speed !== null && (
@@ -209,9 +209,9 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
           </div>
         )}
 
-        {/* Footer: Coordinates & Last Updated Time */}
+        {/* Bagian Bawah: Koordinat & Waktu Pembaruan Terakhir */}
         <div className="pt-3 border-t border-slate-100 text-xs flex flex-col gap-2">
-          {/* Coordinates Row with Copy Action */}
+          {/* Baris Koordinat dengan Aksi Salin */}
           <div className="flex items-center justify-between text-slate-600">
             <div className="flex items-center gap-1.5 truncate">
               <svg
@@ -265,7 +265,7 @@ export const VehicleCard: React.FC<VehicleCardProps> = ({
             )}
           </div>
 
-          {/* Last Updated Timestamp with accessible full date tooltip */}
+          {/* Waktu Pembaruan Terakhir dengan Tooltip Waktu Lengkap */}
           <div className="flex items-center justify-between text-[11px] text-slate-400">
             <span className="flex items-center gap-1">
               <svg

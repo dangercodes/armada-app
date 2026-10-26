@@ -29,7 +29,7 @@ export const ActiveFilterChips: React.FC<ActiveFilterChipsProps> = ({
         Filter Aktif:
       </span>
 
-      {/* Route Chips */}
+      {/* Chip Rute yang Dipilih */}
       {selectedRouteIds.map((id) => {
         const route = routesMap.get(id);
         const hexColor = route?.attributes.color ? `#${route.attributes.color}` : '#1E6BD6';
@@ -70,7 +70,7 @@ export const ActiveFilterChips: React.FC<ActiveFilterChipsProps> = ({
         );
       })}
 
-      {/* Trip Chips */}
+      {/* Chip Perjalanan (Trip) yang Dipilih */}
       {selectedTripIds.map((id) => {
         const trip = tripsMap.get(id);
         const headsign =
@@ -119,7 +119,7 @@ export const ActiveFilterChips: React.FC<ActiveFilterChipsProps> = ({
         );
       })}
 
-      {/* Reset Filters Action Button */}
+      {/* Tombol Aksi Reset Seluruh Filter */}
       <button
         type="button"
         onClick={onResetFilters}

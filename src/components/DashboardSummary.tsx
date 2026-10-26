@@ -32,7 +32,7 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
 
   const otherStatusCount = loadedCount - (inTransitCount + stoppedCount + incomingCount);
 
-  // Distinct active routes on this page
+  // Jumlah rute unik yang aktif pada halaman saat ini
   const uniqueRoutesCount = new Set(
     vehicles.map((v) => v.relationships.route?.data?.id).filter(Boolean),
   ).size;
@@ -41,9 +41,9 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
 
   return (
     <section aria-label="Ringkasan metrik dashboard" className="space-y-4">
-      {/* 21st.dev-inspired Cinematic Hero Banner with Transjakarta Official Backdrop */}
+      {/* Banner Sinematik dengan Latar Belakang Resmi Transjakarta */}
       <div className="relative rounded-3xl overflow-hidden shadow-md border border-slate-900/10 bg-[#031126] text-white min-h-[260px] sm:min-h-[290px] flex items-center">
-        {/* Background Image: Transjakarta Bus Window & Logo Banner */}
+        {/* Gambar Latar Belakang: Jendela Bus & Logo Transjakarta */}
         <div className="absolute inset-0 z-0 select-none pointer-events-none">
           <img
             src={bannerTj}
@@ -51,20 +51,20 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
             className="w-full h-full object-cover object-[center_30%] opacity-90 transition-transform duration-1000 ease-out hover:scale-105"
             loading="eager"
           />
-          {/* Multi-layer Gradient Overlays for Extreme Contrast, Legibility & Depth */}
+          {/* Lapisan Gradien Bertingkat untuk Kontras dan Keterbacaan Teks */}
           <div className="absolute inset-0 bg-gradient-to-r from-[#031126] via-[#051C3D]/95 via-45% to-[#0B254E]/70" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#020b18]/95 via-transparent to-black/40" />
 
-          {/* Ambient Radial Glowing Orbs for Modern Glow Aesthetics */}
+          {/* Efek Pendar Cahaya Radial untuk Estetika Modern */}
           <div className="absolute -top-24 -left-24 w-80 h-80 bg-blue-500/20 rounded-full blur-3xl" />
           <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-sky-400/20 rounded-full blur-3xl" />
         </div>
 
-        {/* Hero Content Container */}
+        {/* Kontainer Konten Hero Banner */}
         <div className="relative z-10 w-full p-6 sm:p-8 lg:p-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          {/* Left Column: Badges, Title, Slogan, and Micro-tags */}
+          {/* Kolom Kiri: Judul Utama, Slogan, dan Tag Fitur */}
           <div className="space-y-3.5 max-w-2xl">
-            {/* Main Headline with Gradient Glow */}
+            {/* Judul Utama dengan Efek Gradien */}
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight">
               Pemantauan Armada{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-blue-200 to-white">
@@ -73,7 +73,7 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
               Transjakarta
             </h1>
 
-            {/* Description with Transjakarta Motto */}
+            {/* Deskripsi beserta Motto Transjakarta */}
             <p className="text-xs sm:text-sm text-slate-200/90 leading-relaxed max-w-xl font-normal">
               Sistem telemetri terpadu untuk memantau pergerakan bus, ketepatan kedatangan di halte, dan kelancaran koridor Transjakarta —{' '}
               <em className="text-sky-200 font-semibold not-italic">
@@ -81,7 +81,7 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
               </em>.
             </p>
 
-            {/* Micro Feature Highlights */}
+            {/* Sorotan Fitur Utama */}
             <div className="flex flex-wrap items-center gap-2 pt-1 text-[11px] text-slate-300 font-medium">
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/10 backdrop-blur-sm border border-white/10">
                 Sinkronisasi 30 Detik
@@ -95,9 +95,9 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
             </div>
           </div>
 
-          {/* Right Column: Modern Glassmorphic Live Metric Card */}
+          {/* Kolom Kanan: Kartu Metrik Live Bergaya Glassmorphism */}
           <div className="shrink-0 lg:w-72 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-5 text-white shadow-2xl flex flex-col justify-between relative overflow-hidden group hover:border-white/35 transition-all">
-            {/* Subtle card glow */}
+            {/* Efek pendar halus pada kartu */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
 
             <div className="relative z-10 flex items-center justify-between text-xs mb-2">
@@ -140,9 +140,9 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
         </div>
       </div>
 
-      {/* Metric Cards Grid */}
+      {/* Grid Kartu Metrik Operasional */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {/* Metric 1: Sedang Berjalan */}
+        {/* Metrik 1: Sedang Berjalan */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-semibold text-slate-500 truncate">
@@ -169,7 +169,7 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
           </p>
         </div>
 
-        {/* Metric 2: Berhenti di Halte */}
+        {/* Metrik 2: Berhenti di Halte */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-semibold text-slate-500 truncate">
@@ -196,7 +196,7 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
           </p>
         </div>
 
-        {/* Metric 3: Mendekati Halte */}
+        {/* Metrik 3: Mendekati Halte */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-semibold text-slate-500 truncate">
@@ -223,7 +223,7 @@ export const DashboardSummary: React.FC<DashboardSummaryProps> = ({
           </p>
         </div>
 
-        {/* Metric 4: Rute Terlayani */}
+        {/* Metrik 4: Rute Terlayani */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 relative overflow-hidden">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-semibold text-slate-500 truncate">

@@ -6,10 +6,10 @@ export const VehicleCardSkeleton: React.FC = () => {
       aria-hidden="true"
       className="relative bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 pl-6 flex flex-col justify-between gap-4 animate-pulse overflow-hidden"
     >
-      {/* Skeleton Accent Bar */}
+      {/* Bar Aksen Garis Skeleton */}
       <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-slate-200" />
 
-      {/* Top Header */}
+      {/* Bagian Header Atas */}
       <div>
         <div className="flex items-center justify-between gap-2 mb-2">
           <div className="h-6 w-16 bg-slate-200 rounded-md" />
@@ -23,10 +23,10 @@ export const VehicleCardSkeleton: React.FC = () => {
         </div>
       </div>
 
-      {/* Speed & Heading placeholder */}
+      {/* Placeholder Indikator Kecepatan & Arah */}
       <div className="h-7 w-full bg-slate-100 rounded-lg" />
 
-      {/* Footer */}
+      {/* Bagian Bawah / Footer */}
       <div className="pt-3 border-t border-slate-100 space-y-2">
         <div className="flex items-center justify-between">
           <div className="h-3.5 w-36 bg-slate-200 rounded" />
